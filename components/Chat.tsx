@@ -1,3 +1,4 @@
+// Chat.tsx
 import React, { useState } from 'react';
 import { Message } from '@/types/chat';
 import { ChatInput } from './ChatInput';
@@ -77,7 +78,7 @@ export function Chat({
           />
         )}
         {isLoading && !partialResponse && (
-          <div className="py-4 text-center text-zinc-500">
+          <div className="py-4 text-center text-zinc-500 dark:text-zinc-400">
             AI is thinking...
           </div>
         )}
@@ -94,20 +95,20 @@ export function Chat({
             <div className="max-w-3xl mx-auto">
               <div className="flex">
                 <div className="w-1 bg-blue-500"></div>
-                <div className="flex-1">
+                <div className="flex-1 bg-white dark:bg-zinc-900">
                   <div className="flex items-center justify-between py-1">
-                    <div className="flex items-center gap-2 text-blue-400 px-4">
+                    <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 px-4">
                       <Pencil size={16} />
                       <span className="text-sm font-medium">Edit prompt</span>
                     </div>
                     <button 
                       onClick={handleCancelEdit}
-                      className="p-2 hover:bg-zinc-800 rounded-md transition-colors"
+                      className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
                     >
-                      <X size={20} className="text-zinc-400" />
+                      <X size={20} className="text-gray-500 dark:text-zinc-400" />
                     </button>
                   </div>
-                  <div className="px-4 py-1 text-sm text-zinc-400">
+                  <div className="px-4 py-1 text-sm text-gray-500 dark:text-zinc-400">
                     {typeof messages[editingIndex].content === 'string' 
                       ? messages[editingIndex].content 
                       : (messages[editingIndex].content as { text: string }).text}
@@ -117,7 +118,7 @@ export function Chat({
             </div>
           </div>
         )}
-        <div className="p-4">
+        <div className="p-4 bg-white dark:bg-transparent">
           <ChatInput 
             onSend={handleSubmit}
             initialValue={editingContent}

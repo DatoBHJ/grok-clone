@@ -1,9 +1,10 @@
 // app/api/chat/route.ts
-import { Message } from '@/types/chat'
+import { config } from '@/app/config'
 import { NextResponse } from 'next/server'
 
-const API_URL = 'https://api.x.ai/v1'
-const API_KEY = process.env.XAI_API_KEY
+const API_URL = config.BaseURL
+const API_KEY = config.API_KEY
+const model = config.model
 
 export async function POST(request: Request) {
   try {
@@ -17,7 +18,7 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         messages,
-        model: 'grok-beta',
+        model: model,
         stream: true,
         temperature: 0.7
       })

@@ -17,39 +17,40 @@ export function useChat() {
 
   const processStreamResponse = async (reader: ReadableStreamDefaultReader<Uint8Array>) => {
     const decoder = new TextDecoder()
-    let accumulatedResponse = ''
+    let accumulatedContent = ''
 
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
 
-      const chunk = decoder.decode(value)
-      const lines = chunk.split('\n')
-      
-      for (const line of lines) {
-        if (line.trim() === '' || line.trim() === 'data: [DONE]') continue
-        
-        if (line.startsWith('data: ')) {
+        const chunk = decoder.decode(value)
+        const lines = chunk
+          .split('\n')
+          .filter(line => line.startsWith('data:'))
+          .map(line => line.slice(5).trim())
+
+        for (const line of lines) {
+          if (line === '[DONE]') continue
+
           try {
-            const data = line.slice(5).trim()
-            if (!data) continue
-            
-            const parsed = JSON.parse(data)
-            const content = parsed.choices?.[0]?.delta?.content || ''
+            const parsed = JSON.parse(line)
+            const content = parsed.choices[0]?.delta?.content || ''
             if (content) {
-              accumulatedResponse += content
-              setPartialResponse(accumulatedResponse)
+              accumulatedContent += content
+              setPartialResponse(prev => prev + content)
             }
           } catch (e) {
-            console.error('Error parsing chunk:', e, 'Line:', line)
-            console.error('Invalid JSON:', line.slice(5).trim())
-            continue
+            console.warn('Failed to parse chunk:', line, e)
           }
         }
       }
-    }
 
-    return accumulatedResponse
+      return accumulatedContent
+    } catch (e) {
+      console.error('Stream processing error:', e)
+      throw e
+    }
   }
 
   const addMessage = useCallback(async (content: string) => {
@@ -89,19 +90,15 @@ export function useChat() {
   }, [messages])
 
   const regenerateResponse = useCallback(async (messageIndex: number) => {
-    // Get the user message that generated this response
     const userMessageIndex = messageIndex - 1
     if (userMessageIndex < 0) return
 
-    // 즉시 현재 답변을 제거
     setMessages(prev => prev.slice(0, messageIndex))
-    
     setIsLoading(true)
     setError(null)
     setPartialResponse('')
 
     try {
-      // Get all messages up to the user message
       const currentMessages = messages.slice(0, messageIndex)
       const response = await sendMessage(currentMessages)
       const reader = response.body?.getReader()
@@ -127,7 +124,6 @@ export function useChat() {
     }
   }, [messages])
 
-
   const editMessage = useCallback(async (index: number, newContent: string) => {
     setMessages(prev => {
       const newMessages = [...prev]
@@ -135,7 +131,6 @@ export function useChat() {
         ...newMessages[index],
         content: newContent
       }
-      
       return newMessages.slice(0, index + 1)
     })
 
