@@ -41,15 +41,6 @@ export function Chat({
     setEditingContent('');
   };
 
-  const handleSubmitEdit = async (content: string) => {
-    if (editingIndex !== null) {
-      setEditingIndex(null);
-      setEditingContent('');
-      await editMessage(editingIndex, content);
-    }
-  };
-
-
   const handleSubmit = useCallback(async (content: string) => {
     if (editingIndex !== null) {
       setEditingIndex(null);
