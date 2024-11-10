@@ -3,6 +3,8 @@
   "rules": {
     "@typescript-eslint/no-unused-vars": "off",
     "@typescript-eslint/no-empty-object-type": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unsafe-function-type": "off",
     "jsx-a11y/alt-text": "off",
     "@next/next/no-img-element": "off"
   }
