@@ -1,5 +1,5 @@
 // Chat.tsx
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Message } from '@/types/chat';
 import { ChatInput } from './ChatInput';
 import { ChatMessage } from './ChatMessage';
@@ -49,13 +49,16 @@ export function Chat({
     }
   };
 
-  const handleSubmit = async (content: string) => {
+
+  const handleSubmit = useCallback(async (content: string) => {
     if (editingIndex !== null) {
-      await handleSubmitEdit(content);
+      setEditingIndex(null);
+      setEditingContent('');
+      await editMessage(editingIndex, content);
     } else {
       await addMessage(content);
     }
-  };
+  }, [editingIndex, editMessage, addMessage]);
 
   return (
     <div className="flex flex-col h-full">
