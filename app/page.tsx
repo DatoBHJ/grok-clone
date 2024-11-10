@@ -80,7 +80,16 @@ const Header = ({ onBack }: { onBack: () => void }) => (
 export default function Home() {
   const [showChat, setShowChat] = useState(false);
   const [inputValue, setInputValue] = useState('');
-  const { messages, isLoading, error, addMessage, partialResponse, resetChat } = useChat();
+  const { 
+    messages, 
+    isLoading, 
+    error, 
+    addMessage, 
+    editMessage, 
+    partialResponse, 
+    regenerateResponse,
+    resetChat 
+  } = useChat();
   
   const handleStartChat = async () => {
     if (inputValue.trim()) {
@@ -111,12 +120,16 @@ export default function Home() {
             isLoading={isLoading}
             error={error}
             addMessage={addMessage}
+            editMessage={editMessage} 
+            regenerateResponse={regenerateResponse}
             partialResponse={partialResponse}
+            
           />
         </div>
       </div>
     );
   }
+
 
   return (
     <div className="min-h-screen bg-background text-foreground">
