@@ -1,34 +1,26 @@
 // app/api/chat/route.ts
-import { config } from '@/app/config'
+import { createRequestBody, defaultConfig } from '@/types/chat'
 import { NextResponse } from 'next/server'
-
-const API_URL = config.BaseURL
-const API_KEY = config.API_KEY
-const model = config.model
 
 export async function POST(request: Request) {
   try {
-    const { messages } = await request.json()
-
-    const response = await fetch(`${API_URL}/chat/completions`, {
+    const { messages, parameters } = await request.json()
+    
+    const requestBody = createRequestBody(messages, parameters)
+    
+    const response = await fetch(`${defaultConfig.api.baseURL}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
+        'Authorization': `Bearer ${defaultConfig.api.key}`
       },
-      body: JSON.stringify({
-        messages,
-        model: model,
-        stream: true,
-        temperature: 0.7
-      })
+      body: JSON.stringify(requestBody)
     })
 
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`)
     }
 
-    // Forward the streaming response
     return new Response(response.body, {
       headers: {
         'Content-Type': 'text/event-stream',

@@ -1,11 +1,13 @@
 export const config = {
     // useOllamaEmbeddings: false,
     BaseURL: 'https://api.groq.com/openai/v1', 
-    xAI_BaseURL: "https://api.x.ai/v1",
-    API_KEY: process.env.GROQ_API_KEY, 
-    xAI_API_KEY: process.env.XAI_API_KEY,
+    API_KEY: process.env.GROQ_API_KEY,
     model: 'llama3-8b-8192',
+
+    xAI_BaseURL: "https://api.x.ai/v1",
+    xAI_API_KEY: process.env.XAI_API_KEY,
     xAI_model: 'grok-beta',
+    
     // embeddingsModel: 'text-embedding-3-small',
     // textChunkSize: 800, 
     // textChunkOverlap: 200, 
