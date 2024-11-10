@@ -38,8 +38,8 @@ export function ChatInput({ onSend, initialValue = '', isLoading }: ChatInputPro
         onChange={(e) => setInput(e.target.value)}
         placeholder={"Ask anything"}
         disabled={isLoading}
-        className="w-full px-12 py-4 bg-gray-100 dark:bg-zinc-800 rounded-full text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-        onKeyPress={(e) => e.key === 'Enter' && handleSubmit(e)}
+        className="w-full px-12 py-4 bg-gray-100 dark:bg-zinc-800 rounded-full text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-zinc-400 focus:outline-none focus:ring-0"
+        onKeyDown={(e) => e.key === 'Enter' && handleSubmit(e)}
       />
       <Image className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-zinc-400" />
       <SendHorizontal 
@@ -48,4 +48,5 @@ export function ChatInput({ onSend, initialValue = '', isLoading }: ChatInputPro
       />
     </div>
   );
-}
+  
+  
