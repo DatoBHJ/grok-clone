@@ -62,10 +62,10 @@ export interface ChatParameters {
 // 기본 설정값
 export const defaultConfig: ChatConfig = {
   systemPrompt: "You are a helpful AI assistant. Respond thoughtfully and professionally to the user's questions.",
-  model: config.model,
+  model: config.xAI_model,
   api: {
-    baseURL: config.BaseURL,
-    key: config.API_KEY || "",
+    baseURL: config.xAI_BaseURL,
+    key: config.xAI_API_KEY || "",
   },
   parameters: {
     temperature: 0.7,     // 높을수록 더 창의적인 응답

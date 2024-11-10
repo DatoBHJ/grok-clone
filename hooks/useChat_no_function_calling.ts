@@ -1,15 +1,9 @@
 import { useState, useCallback } from 'react'
 import { Message, ChatResponse, defaultConfig, createChatMessages, ChatParameters } from '@/types/chat'
-import { functionCalling } from '@/app/function-calling'
 
 interface UseChatOptions {
   systemPrompt?: string
   parameters?: Partial<ChatParameters>
-}
-
-interface FunctionCallResult {
-  type: string;
-  [key: string]: any;
 }
 
 export function useChat(options: UseChatOptions = {}) {
@@ -23,6 +17,7 @@ export function useChat(options: UseChatOptions = {}) {
     parameters = {} 
   } = options
 
+  // 스트림 응답 처리 함수
   const processStreamResponse = async (reader: ReadableStreamDefaultReader<Uint8Array>) => {
     const decoder = new TextDecoder()
     let accumulatedContent = ''
@@ -35,7 +30,7 @@ export function useChat(options: UseChatOptions = {}) {
         const chunk = decoder.decode(value)
         const lines = chunk
           .split('\n')
-          .filter(line => line.trim().startsWith('data:'))
+          .filter(line => line.startsWith('data:'))
           .map(line => line.slice(5).trim())
 
         for (const line of lines) {
@@ -43,14 +38,13 @@ export function useChat(options: UseChatOptions = {}) {
 
           try {
             const parsed = JSON.parse(line)
-            const content = parsed.choices?.[0]?.delta?.content || ''
+            const content = parsed.choices[0]?.delta?.content || ''
             if (content) {
               accumulatedContent += content
               setPartialResponse(prev => prev + content)
             }
           } catch (e) {
-            console.debug('Failed to parse chunk:', line)
-            continue
+            console.warn('Failed to parse chunk:', line, e)
           }
         }
       }
@@ -62,6 +56,7 @@ export function useChat(options: UseChatOptions = {}) {
     }
   }
 
+  // 채팅 초기화
   const resetChat = () => {
     setMessages([])
     setIsLoading(false)
@@ -69,38 +64,7 @@ export function useChat(options: UseChatOptions = {}) {
     setPartialResponse('')
   }
 
-  const createEnhancedPrompt = (userMessage: string, functionResult: FunctionCallResult | null) => {
-    let enhancedPrompt = userMessage
-
-    if (functionResult) {
-      switch (functionResult.type) {
-        case 'news_search':
-          enhancedPrompt += `\n\nRecent news context:\n${functionResult.news
-            .slice(0, 3)
-            .map((item: any) => `- ${item.title}: ${item.snippet}`)
-            .join('\n')}`
-          break
-        case 'places':
-          enhancedPrompt += `\n\nPlaces context:\n${functionResult.places
-            .slice(0, 3)
-            .map((place: any) => `- ${place.title}: ${place.address}`)
-            .join('\n')}`
-          break
-        case 'shopping':
-          enhancedPrompt += `\n\nShopping context:\n${functionResult.shopping
-            .slice(0, 3)
-            .map((item: any) => `- ${item.title}: ${item.price}`)
-            .join('\n')}`
-          break
-        case 'ticker':
-          enhancedPrompt += `\n\nStock context: ${functionResult.data}`
-          break
-      }
-    }
-
-    return enhancedPrompt
-  }
-
+  // API 요청 함수
   const sendChatRequest = async (chatMessages: Message[]) => {
     const response = await fetch('/api/chat', {
       method: 'POST',
@@ -123,24 +87,17 @@ export function useChat(options: UseChatOptions = {}) {
     return response
   }
 
+  // 새 메시지 추가
   const addMessage = useCallback(async (content: string) => {
-    const userMessage: Message = {
-      role: 'user',
-      content: content
-    }
-    setMessages(prev => [...prev, userMessage])
+    const chatMessages = createChatMessages(content, systemPrompt, messages)
+    const userMessage = chatMessages[chatMessages.length - 1]
     
+    setMessages(prev => [...prev, userMessage])
     setIsLoading(true)
     setError(null)
     setPartialResponse('')
 
     try {
-      const functionResult = await functionCalling(content)
-      console.log('functionResult:', functionResult)
-      
-      const enhancedContent = createEnhancedPrompt(content, functionResult)
-      const chatMessages = createChatMessages(enhancedContent, systemPrompt, messages)
-      
       const response = await sendChatRequest(chatMessages)
       const reader = response.body?.getReader()
 
@@ -165,38 +122,32 @@ export function useChat(options: UseChatOptions = {}) {
     }
   }, [messages, systemPrompt, parameters])
 
+  // 메시지 편집
   const editMessage = useCallback(async (index: number, newContent: string) => {
+    // 편집된 메시지까지의 이전 메시지들만 유지
+    const previousMessages = messages.slice(0, index)
+    
+    // 새로운 메시지 세트 생성
+    const chatMessages = createChatMessages(
+      newContent,
+      systemPrompt,
+      previousMessages
+    )
+
+    setMessages(prev => {
+      const newMessages = [...prev]
+      newMessages[index] = {
+        ...newMessages[index],
+        content: newContent
+      }
+      return newMessages.slice(0, index + 1)
+    })
+
     setIsLoading(true)
     setError(null)
     setPartialResponse('')
 
     try {
-      // 1. functionCalling으로 새로운 컨텍스트 가져오기
-      const functionResult = await functionCalling(newContent)
-      console.log('functionResult:', functionResult)
-      
-      // 2. 향상된 프롬프트 생성
-      const enhancedContent = createEnhancedPrompt(newContent, functionResult)
-      
-      // 편집된 메시지까지의 이전 메시지들만 유지
-      const previousMessages = messages.slice(0, index)
-      
-      // 새로운 메시지 세트 생성
-      const chatMessages = createChatMessages(
-        enhancedContent,
-        systemPrompt,
-        previousMessages
-      )
-
-      setMessages(prev => {
-        const newMessages = [...prev]
-        newMessages[index] = {
-          ...newMessages[index],
-          content: newContent // 원본 메시지 저장
-        }
-        return newMessages.slice(0, index + 1)
-      })
-
       const response = await sendChatRequest(chatMessages)
       const reader = response.body?.getReader()
 
@@ -221,15 +172,17 @@ export function useChat(options: UseChatOptions = {}) {
     }
   }, [messages, systemPrompt, parameters])
 
+  // 응답 재생성
   const regenerateResponse = useCallback(async (messageIndex: number) => {
+    const previousMessages = messages.slice(0, messageIndex)
+    
+    setMessages(prev => prev.slice(0, messageIndex))
+    setIsLoading(true)
+    setError(null)
+    setPartialResponse('')
+
     try {
-      // 1. 먼저 상태들을 초기화하고 메시지를 즉시 제거
-      setIsLoading(true)
-      setError(null)
-      setPartialResponse('')
-      
-      // 2. 이전 메시지들과 마지막 유저 메시지 찾기
-      const previousMessages = messages.slice(0, messageIndex)
+      // 이전 대화 컨텍스트로 새로운 채팅 메시지 생성
       const lastUserMessage = previousMessages
         .slice()
         .reverse()
@@ -239,15 +192,8 @@ export function useChat(options: UseChatOptions = {}) {
         throw new Error('No user message found to regenerate response')
       }
 
-      // 3. 메시지 즉시 제거
-      setMessages(prev => prev.slice(0, messageIndex))
-
-      // 4. 비동기 작업 시작
-      const functionResult = await functionCalling(lastUserMessage.content)
-      const enhancedContent = createEnhancedPrompt(lastUserMessage.content, functionResult)
-
       const chatMessages = createChatMessages(
-        enhancedContent,
+        lastUserMessage.content,
         systemPrompt,
         previousMessages.slice(0, -1)
       )
@@ -270,9 +216,6 @@ export function useChat(options: UseChatOptions = {}) {
     } catch (err) {
       console.error('Chat error:', err)
       setError(err instanceof Error ? err.message : 'Failed to regenerate response')
-      
-      // 에러 발생시 원래 메시지 복구
-      setMessages(messages)
     } finally {
       setIsLoading(false)
       setPartialResponse('')
