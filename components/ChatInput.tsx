@@ -48,5 +48,4 @@ export function ChatInput({ onSend, initialValue = '', isLoading }: ChatInputPro
       />
     </div>
   );
-  
-  
+}
