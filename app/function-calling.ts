@@ -12,7 +12,7 @@ interface ImageGenerationResult {
   type: 'image_generation';
   images: Array<{
     url: string;
-    content_type: string;
+    // content_type: string;
   }>;
 }
 

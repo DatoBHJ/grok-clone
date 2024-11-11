@@ -7,7 +7,7 @@ export interface MessageContent {
   text: string;
   images?: Array<{
     url: string;
-    content_type: string;
+    // content_type: string;
   }>;
 }
 
@@ -31,7 +31,7 @@ export interface ImageGenerationResult {
   type: 'image_generation';
   images: Array<{
     url: string;
-    content_type: string;
+    // content_type: string;
   }>;
 }
 

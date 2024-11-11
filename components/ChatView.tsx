@@ -7,7 +7,7 @@ interface MessageContent {
   text: string;
   images?: Array<{
     url: string;
-    content_type: string;
+    // content_type: string;
   }>;
 }
 
@@ -43,8 +43,8 @@ const PROSE_STYLES = {
   }
 } as const;
 
-const ImageGrid: React.FC<{ images: Array<{ url: string; content_type: string }> }> = ({ images }) => {
-  const handleImageClick = (imageUrl: string, contentType: string) => {
+const ImageGrid: React.FC<{ images: Array<{ url: string }> }> = ({ images }) => {
+  const handleImageClick = (imageUrl: string) => {
     // base64 이미지 데이터를 새 창에서 보여주기
     const newWindow = window.open();
     if (newWindow) {
@@ -87,7 +87,7 @@ const ImageGrid: React.FC<{ images: Array<{ url: string; content_type: string }>
           />
           <div className={PROSE_STYLES.image.overlay}>
             <button 
-              onClick={() => handleImageClick(image.url, image.content_type)}
+              onClick={() => handleImageClick(image.url)}
               className={PROSE_STYLES.image.button}
             >
               View Full Image
