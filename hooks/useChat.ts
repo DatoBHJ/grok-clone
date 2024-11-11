@@ -117,7 +117,7 @@ export function useChat(options: UseChatOptions = {}) {
       const functionResult = await functionCalling(content);
       console.log('functionResult:', functionResult);
       
-      if (functionResult?.type === 'image_generation') {
+      if (functionResult?.type === 'image_url') {
         // 이미지 생성의 경우 chat completion 요청을 하지 않고 바로 이미지 응답
         const imgResult = functionResult as ImageGenerationResult;
         setMessages(prev => [...prev, {
@@ -197,7 +197,7 @@ const editMessage = useCallback(async (index: number, newContent: string) => {
     });
 
     const functionResult = await functionCalling(newContent);
-    if (functionResult?.type === 'image_generation') {
+    if (functionResult?.type === 'image_url') {
       const imgResult = functionResult as ImageGenerationResult;
       setMessages(prev => [...prev, {
         role: 'assistant',
@@ -265,7 +265,7 @@ const regenerateResponse = useCallback(async (messageIndex: number) => {
     setMessages(prev => prev.slice(0, messageIndex));
 
     const functionResult = await functionCalling(userContent);
-    if (functionResult?.type === 'image_generation') {
+    if (functionResult?.type === 'image_url') {
       const imgResult = functionResult as ImageGenerationResult;
       setMessages(prev => [...prev, {
         role: 'assistant',

@@ -9,7 +9,7 @@ interface NewsResult {
 }
 
 interface ImageGenerationResult {
-  type: 'image_generation';
+  type: 'image_url';
   images: Array<{
     url: string;
     // content_type: string;

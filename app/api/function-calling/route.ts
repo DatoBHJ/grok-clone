@@ -164,7 +164,7 @@ async function generateImage(prompt: string) {
     }
 
     return {
-      type: 'image_generation' as const,
+      type: 'image_url' as const,
       images: result.data.images.map(img => ({
         url: img.url,
         // content_type: img.content_type

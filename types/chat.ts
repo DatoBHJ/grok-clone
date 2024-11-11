@@ -14,7 +14,7 @@ export interface MessageContent {
 export type Role = 'system' | 'user' | 'assistant';
 
 export interface Message {
-  role: Role;
+  role: Role
   content: string | MessageContent;
 }
 
@@ -28,7 +28,7 @@ export interface NewsResult {
 }
 
 export interface ImageGenerationResult {
-  type: 'image_generation';
+  type: 'image_url';
   images: Array<{
     url: string;
     // content_type: string;
