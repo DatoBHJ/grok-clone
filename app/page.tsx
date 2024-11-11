@@ -28,12 +28,23 @@ const SuggestionCard = ({
   </Card>
 );
 
-const ImageCard = ({ title, imageSrc }: { title: string, imageSrc: string }) => (
-  <div className="relative group cursor-pointer rounded-xl overflow-hidden">
+const ImageCard = ({ 
+  title, 
+  imageSrc,
+  onClick 
+}: { 
+  title: string, 
+  imageSrc: string,
+  onClick: (title: string) => void 
+}) => (
+  <div 
+    className="relative group cursor-pointer rounded-xl overflow-hidden"
+    onClick={() => onClick(`Generate image of ${title.toLowerCase()}`)}
+  >
     <img 
       src={imageSrc} 
       alt={title}
-      className="w-full h-48 object-cover"
+      className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
     />
     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
     <div className="absolute bottom-0 left-0 right-0 p-4">
@@ -110,6 +121,12 @@ export default function Home() {
     await addMessage(title);
   };
 
+  const handleImageCardClick = async (title: string) => {
+    setInputValue(title);
+    setShowChat(true);
+    await addMessage(title);
+  };
+
   if (showChat) {
     return (
       <div className="flex flex-col h-screen overflow-hidden bg-background">
@@ -123,13 +140,11 @@ export default function Home() {
             editMessage={editMessage} 
             regenerateResponse={regenerateResponse}
             partialResponse={partialResponse}
-            
           />
         </div>
       </div>
     );
   }
-
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -147,7 +162,7 @@ export default function Home() {
             />
             <Image className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-foreground/40 dark:text-white" />
             <SendHorizontal 
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-foreground  cursor-pointer"
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-foreground cursor-pointer"
               onClick={handleStartChat}
             />
           </div>
@@ -179,22 +194,24 @@ export default function Home() {
           />
         </div>
 
-        {/* <div className="grid grid-cols-2 gap-4 mb-4">
-          <ImageCard 
-            title="A speeding roadster"
-            imageSrc="/api/placeholder/600/400"
+        <div className="grid grid-cols-2 gap-4 mb-4">
+        <ImageCard 
+            title="An underwater library"
+            imageSrc="/underwater.jpeg"
+            onClick={handleImageCardClick}
           />
           <ImageCard 
             title="A robot in a flower field"
-            imageSrc="/api/placeholder/600/400"
+            imageSrc="/robot.jpeg"
+            onClick={handleImageCardClick}
           />
-        </div> */}
+        </div>
 
         <p className="text-center dark:text-zinc-700 text-slate-300 text-md font-medium mb-8">
           Images are generated with FLUX.1 by Black Forest Labs
         </p>
 
-        {/* <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <NewsCard 
             title="M4 Mac Mini: Power and Price Debate"
             meta="Trending now · Technology · 821 posts"
@@ -203,7 +220,7 @@ export default function Home() {
             title="Sam Altman's AGI Prediction for 2025"
             meta="16 hours ago · Technology · 6K posts"
           />
-        </div> */}
+        </div>
       </main>
     </div>
   );

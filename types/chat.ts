@@ -1,11 +1,50 @@
-// config/chat.ts
+
+// types/chat.ts
 
 import { config } from "@/app/config"
 
-// types/chat.ts
+export interface MessageContent {
+  text: string;
+  images?: Array<{
+    url: string;
+    content_type: string;
+  }>;
+}
+
+export type Role = 'system' | 'user' | 'assistant';
+
 export interface Message {
-  role: 'assistant' | 'user' | 'system'
-  content: string 
+  role: Role;
+  content: string | MessageContent;
+}
+
+export interface NewsResult {
+  type: 'news_search';
+  news: Array<{ 
+    title: string; 
+    snippet: string; 
+    link: string; 
+  }>;
+}
+
+export interface ImageGenerationResult {
+  type: 'image_generation';
+  images: Array<{
+    url: string;
+    content_type: string;
+  }>;
+}
+
+export interface TickerResult {
+  type: 'ticker';
+  data: any;
+}
+
+export type FunctionResult = NewsResult | ImageGenerationResult | TickerResult | null;
+
+export interface ChatRequestMessage {
+  role: Role;
+  content: string;
 }
 
 export interface ChatResponse {
@@ -81,15 +120,19 @@ export const defaultConfig: ChatConfig = {
 
 // 채팅 메시지 생성 함수
 export function createChatMessages(
-  userPrompt: string,
-  systemPrompt: string = defaultConfig.systemPrompt,
-  previousMessages: Message[] = []
-): Message[] {
-  return [
+  content: string,
+  systemPrompt: string,
+  previousMessages: Message[]
+): ChatRequestMessage[] {
+  const messages: ChatRequestMessage[] = [
     { role: 'system', content: systemPrompt },
-    ...previousMessages,
-    { role: 'user', content: userPrompt }
-  ]
+    ...previousMessages.map(msg => ({
+      role: msg.role,
+      content: typeof msg.content === 'string' ? msg.content : msg.content.text
+    })),
+    { role: 'user', content }
+  ];
+  return messages;
 }
 
 // API 요청 바디 생성 함수

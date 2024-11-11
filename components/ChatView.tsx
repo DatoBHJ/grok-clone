@@ -3,8 +3,16 @@ import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
 import type { CodeProps } from 'react-markdown/lib/ast-to-react';
 
+interface MessageContent {
+  text: string;
+  images?: Array<{
+    url: string;
+    content_type: string;
+  }>;
+}
+
 interface ChatViewProps {
-  content: string;
+  content: string | MessageContent;
 }
 
 const PROSE_STYLES = {
@@ -25,8 +33,71 @@ const PROSE_STYLES = {
   emphasis: {
     strong: "font-bold break-words font-handwriting",
     italic: "italic break-words font-handwriting"
+  },
+  image: {
+    grid: "grid grid-cols-2 gap-4 my-4",
+    container: "relative group rounded-xl overflow-hidden aspect-square",
+    img: "w-full h-full object-cover rounded-xl",
+    overlay: "absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center",
+    button: "text-white text-sm bg-black/50 px-4 py-2 rounded-full hover:bg-black/70 transition-colors"
   }
 } as const;
+
+const ImageGrid: React.FC<{ images: Array<{ url: string; content_type: string }> }> = ({ images }) => {
+  const handleImageClick = (imageUrl: string, contentType: string) => {
+    // base64 이미지 데이터를 새 창에서 보여주기
+    const newWindow = window.open();
+    if (newWindow) {
+      newWindow.document.write(`
+        <html>
+          <head>
+            <title>Full Image</title>
+            <style>
+              body {
+                margin: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                background: #000;
+              }
+              img {
+                max-width: 100%;
+                max-height: 100vh;
+                object-fit: contain;
+              }
+            </style>
+          </head>
+          <body>
+            <img src="${imageUrl}" alt="Full size image" />
+          </body>
+        </html>
+      `);
+    }
+  };
+
+  return (
+    <div className={PROSE_STYLES.image.grid}>
+      {images.map((image, index) => (
+        <div key={index} className={PROSE_STYLES.image.container}>
+          <img 
+            src={image.url} 
+            alt={`Generated image ${index + 1}`}
+            className={PROSE_STYLES.image.img}
+          />
+          <div className={PROSE_STYLES.image.overlay}>
+            <button 
+              onClick={() => handleImageClick(image.url, image.content_type)}
+              className={PROSE_STYLES.image.button}
+            >
+              View Full Image
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 const ChatView: React.FC<ChatViewProps> = ({ content }) => {
   const components: Components = {
@@ -110,12 +181,25 @@ const ChatView: React.FC<ChatViewProps> = ({ content }) => {
     ),
   };
 
+  if (typeof content === 'string') {
+    return (
+      <div className={PROSE_STYLES.container}>
+        <article className={PROSE_STYLES.article}>
+          <ReactMarkdown components={components} skipHtml>
+            {content}
+          </ReactMarkdown>
+        </article>
+      </div>
+    );
+  }
+
   return (
     <div className={PROSE_STYLES.container}>
       <article className={PROSE_STYLES.article}>
         <ReactMarkdown components={components} skipHtml>
-          {content}
+          {content.text}
         </ReactMarkdown>
+        {content.images && <ImageGrid images={content.images} />}
       </article>
     </div>
   );

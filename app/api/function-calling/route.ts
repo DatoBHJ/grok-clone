@@ -3,10 +3,44 @@ import { OpenAI } from 'openai'
 import { config } from '@/app/config'
 import { type ChatCompletionTool } from 'openai/resources/chat/completions'
 
+// app/api/function-calling/route.ts
+
+import { fal } from "@fal-ai/client";
+
+// Flux API 응답 타입 정의
+interface FluxImageResponse {
+  images: Array<{
+    url: string;
+    content_type: string;
+  }>;
+  seed: number;
+  timings: {
+    total: number;
+  };
+}
+
+
+interface Place {
+  position: number;
+  title: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  rating: number;
+  ratingCount: number;
+  category: string;
+  phoneNumber: string;
+  website: string;
+  cid: string;
+}
+
+
 const client = new OpenAI({
   apiKey: config.API_KEY,
   baseURL: config.BaseURL,
 })
+
+type FunctionName = "getTickers" | "searchPlaces" | "goShopping" | "searchNews" | "generateImage";
 
 const functions: ChatCompletionTool[] = [
   {
@@ -80,21 +114,66 @@ const functions: ChatCompletionTool[] = [
         required: ["query"],
       },
     },
-  }
-]
+  },
+  {
+    type: "function",
+    function: {
+      name: "generateImage",
+      description: "Generate images using AI when the user asks for image creation, drawing, or visualization",
+      parameters: {
+        type: "object",
+        properties: {
+          prompt: {
+            type: "string",
+            description: "The prompt to generate the image",
+          },
+        },
+        required: ["prompt"],
+      },
+    },
+  },
+];
 
-interface Place {
-  position: number;
-  title: string;
-  address: string;
-  latitude: number;
-  longitude: number;
-  rating: number;
-  ratingCount: number;
-  category: string;
-  phoneNumber: string;
-  website: string;
-  cid: string;
+
+async function generateImage(prompt: string) {
+  try {
+    fal.config({
+      credentials: process.env.FAL_KEY
+    });
+
+    const result = await fal.subscribe<FluxImageResponse>("fal-ai/fast-turbo-diffusion", {
+      input: {
+        prompt: prompt,
+        model_name: "stabilityai/sdxl-turbo",
+        image_size: "square_hd",
+        num_inference_steps: 2,
+        guidance_scale: 1,
+        num_images: 2,
+        sync_mode: true
+      },
+      logs: true,
+      onQueueUpdate: (update) => {
+        if (update.status === "IN_PROGRESS") {
+          console.log("Generation progress:", update.logs);
+        }
+      },
+    });
+
+    if (!result || !result.data) {
+      throw new Error('No result from image generation');
+    }
+
+    return {
+      type: 'image_generation' as const,
+      images: result.data.images.map(img => ({
+        url: img.url,
+        content_type: img.content_type
+      }))
+    };
+  } catch (error) {
+    console.error('Error generating image:', error);
+    throw error;
+  }
 }
 
 async function searchNews(query: string) {
@@ -195,14 +274,15 @@ async function getTickers(ticker: string) {
   }
 }
 
-type FunctionName = "getTickers" | "searchPlaces" | "goShopping" | "searchNews";
 
 const availableFunctions: Record<FunctionName, Function> = {
   getTickers,
   searchPlaces,
   goShopping,
   searchNews,
-}
+  generateImage,
+};
+
 
 export async function POST(req: Request) {
   try {
@@ -267,6 +347,9 @@ export async function POST(req: Request) {
           break
         case 'searchNews':
           result = await functionToCall(args.query)
+          break
+        case 'generateImage':
+          result = await functionToCall(args.prompt)
           break
       }
 

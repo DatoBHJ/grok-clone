@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { Message, ChatResponse, defaultConfig, createChatMessages, ChatParameters } from '@/types/chat'
+import { Message, ChatResponse, defaultConfig, createChatMessages, ChatParameters, ImageGenerationResult, ChatRequestMessage } from '@/types/chat'
 import { functionCalling } from '@/app/function-calling'
 
 interface UseChatOptions {
@@ -101,181 +101,212 @@ export function useChat(options: UseChatOptions = {}) {
     return enhancedPrompt
   }
 
-  const sendChatRequest = async (chatMessages: Message[]) => {
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messages: chatMessages,
-        parameters: {
-          ...defaultConfig.parameters,
-          ...parameters
-        }
-      })
-    })
-
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status}`)
-    }
-
-    return response
-  }
 
   const addMessage = useCallback(async (content: string) => {
     const userMessage: Message = {
       role: 'user',
       content: content
-    }
-    setMessages(prev => [...prev, userMessage])
+    };
+    setMessages(prev => [...prev, userMessage]);
     
-    setIsLoading(true)
-    setError(null)
-    setPartialResponse('')
-
+    setIsLoading(true);
+    setError(null);
+    setPartialResponse('');
+  
     try {
-      const functionResult = await functionCalling(content)
-      console.log('functionResult:', functionResult)
+      const functionResult = await functionCalling(content);
+      console.log('functionResult:', functionResult);
       
-      const enhancedContent = createEnhancedPrompt(content, functionResult)
-      const chatMessages = createChatMessages(enhancedContent, systemPrompt, messages)
-      
-      const response = await sendChatRequest(chatMessages)
-      const reader = response.body?.getReader()
-
-      if (!reader) {
-        throw new Error('No reader available')
-      }
-
-      const accumulatedResponse = await processStreamResponse(reader)
-
-      if (accumulatedResponse) {
+      if (functionResult?.type === 'image_generation') {
+        // 이미지 생성의 경우 chat completion 요청을 하지 않고 바로 이미지 응답
+        const imgResult = functionResult as ImageGenerationResult;
         setMessages(prev => [...prev, {
           role: 'assistant',
-          content: accumulatedResponse
-        }])
+          content: {
+            text: '', // 빈 텍스트
+            images: imgResult.images
+          }
+        }]);
+        return;
       }
-    } catch (err) {
-      console.error('Chat error:', err)
-      setError(err instanceof Error ? err.message : 'Failed to send message')
-    } finally {
-      setIsLoading(false)
-      setPartialResponse('')
-    }
-  }, [messages, systemPrompt, parameters])
-
-  const editMessage = useCallback(async (index: number, newContent: string) => {
-    try {
-      // 1. 먼저 상태들을 초기화하고 메시지를 즉시 제거
-      setIsLoading(true)
-      setError(null)
-      setPartialResponse('')
+    
       
-      // 2. 이전 메시지들만 유지하고 새로운 메시지로 업데이트
-      setMessages(prev => {
-        const newMessages = [...prev]
-        newMessages[index] = {
-          ...newMessages[index],
-          content: newContent
+      const enhancedContent = createEnhancedPrompt(content, functionResult);
+      const chatMessages = createChatMessages(enhancedContent, systemPrompt, messages);
+      
+      const response = await sendChatRequest(chatMessages);
+      const reader = response.body?.getReader();
+  
+      if (!reader) {
+        throw new Error('No reader available');
+      }
+  
+      const accumulatedResponse = await processStreamResponse(reader);
+  
+
+    if (accumulatedResponse) {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: accumulatedResponse
+      }]);
+    }
+  } catch (err) {
+    console.error('Chat error:', err);
+    setError(err instanceof Error ? err.message : 'Failed to send message');
+  } finally {
+    setIsLoading(false);
+    setPartialResponse('');
+  }
+}, [messages, systemPrompt, parameters]);
+
+async function sendChatRequest(chatMessages: ChatRequestMessage[]) {
+  const response = await fetch('/api/chat', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      messages: chatMessages,
+      parameters: {
+        ...defaultConfig.parameters,
+        ...parameters
+      }
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status}`);
+  }
+
+  return response;
+}
+
+const editMessage = useCallback(async (index: number, newContent: string) => {
+  try {
+    setIsLoading(true);
+    setError(null);
+    setPartialResponse('');
+    
+    setMessages(prev => {
+      const newMessages = [...prev];
+      newMessages[index] = {
+        ...newMessages[index],
+        content: newContent
+      };
+      return newMessages.slice(0, index + 1);
+    });
+
+    const functionResult = await functionCalling(newContent);
+    if (functionResult?.type === 'image_generation') {
+      const imgResult = functionResult as ImageGenerationResult;
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: {
+          text: '',
+          images: imgResult.images
         }
-        return newMessages.slice(0, index + 1)
-      })
-
-      // 3. 비동기 작업 시작
-      const functionResult = await functionCalling(newContent)
-      const enhancedContent = createEnhancedPrompt(newContent, functionResult)
-      
-      const previousMessages = messages.slice(0, index)
-      const chatMessages = createChatMessages(
-        enhancedContent,
-        systemPrompt,
-        previousMessages
-      )
-
-      const response = await sendChatRequest(chatMessages)
-      const reader = response.body?.getReader()
-
-      if (!reader) {
-        throw new Error('No reader available')
-      }
-
-      const accumulatedResponse = await processStreamResponse(reader)
-
-      if (accumulatedResponse) {
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: accumulatedResponse
-        }])
-      }
-    } catch (err) {
-      console.error('Chat error:', err)
-      setError(err instanceof Error ? err.message : 'Failed to update message')
-      // 에러 발생시 원래 메시지 복구
-      setMessages(messages)
-    } finally {
-      setIsLoading(false)
-      setPartialResponse('')
+      }]);
+      return;
     }
-  }, [messages, systemPrompt, parameters])
 
-  const regenerateResponse = useCallback(async (messageIndex: number) => {
-    try {
-      // 1. 먼저 상태들을 초기화하고 메시지를 즉시 제거
-      setIsLoading(true)
-      setError(null)
-      setPartialResponse('')
-      
-      // 2. 이전 메시지들과 마지막 유저 메시지 찾기
-      const previousMessages = messages.slice(0, messageIndex)
-      const lastUserMessage = previousMessages
-        .slice()
-        .reverse()
-        .find(msg => msg.role === 'user')
+    const enhancedContent = createEnhancedPrompt(newContent, functionResult);
+    
+    const previousMessages = messages.slice(0, index);
+    const chatMessages = createChatMessages(
+      enhancedContent,
+      systemPrompt,
+      previousMessages
+    );
 
-      if (!lastUserMessage) {
-        throw new Error('No user message found to regenerate response')
-      }
+    const response = await sendChatRequest(chatMessages);
+    const reader = response.body?.getReader();
 
-      // 3. 메시지 즉시 제거
-      setMessages(prev => prev.slice(0, messageIndex))
-
-      // 4. 비동기 작업 시작
-      const functionResult = await functionCalling(lastUserMessage.content)
-      const enhancedContent = createEnhancedPrompt(lastUserMessage.content, functionResult)
-
-      const chatMessages = createChatMessages(
-        enhancedContent,
-        systemPrompt,
-        previousMessages.slice(0, -1)
-      )
-
-      const response = await sendChatRequest(chatMessages)
-      const reader = response.body?.getReader()
-
-      if (!reader) {
-        throw new Error('No reader available')
-      }
-
-      const accumulatedResponse = await processStreamResponse(reader)
-
-      if (accumulatedResponse) {
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: accumulatedResponse
-        }])
-      }
-    } catch (err) {
-      console.error('Chat error:', err)
-      setError(err instanceof Error ? err.message : 'Failed to regenerate response')
-      
-      // 에러 발생시 원래 메시지 복구
-      setMessages(messages)
-    } finally {
-      setIsLoading(false)
-      setPartialResponse('')
+    if (!reader) {
+      throw new Error('No reader available');
     }
-  }, [messages, systemPrompt, parameters])
+
+    const accumulatedResponse = await processStreamResponse(reader);
+
+    if (accumulatedResponse) {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: accumulatedResponse
+      }]);
+    }
+  } catch (err) {
+    console.error('Chat error:', err);
+    setError(err instanceof Error ? err.message : 'Failed to send message');
+  } finally {
+    setIsLoading(false);
+    setPartialResponse('');
+  }
+}, [messages, systemPrompt, parameters]);
+
+const regenerateResponse = useCallback(async (messageIndex: number) => {
+  try {
+    setIsLoading(true);
+    setError(null);
+    setPartialResponse('');
+    
+    const previousMessages = messages.slice(0, messageIndex);
+    const lastUserMessage = previousMessages
+      .slice()
+      .reverse()
+      .find(msg => msg.role === 'user');
+
+    if (!lastUserMessage) {
+      throw new Error('No user message found to regenerate response');
+    }
+
+    const userContent = typeof lastUserMessage.content === 'string' 
+      ? lastUserMessage.content 
+      : lastUserMessage.content.text;
+
+    setMessages(prev => prev.slice(0, messageIndex));
+
+    const functionResult = await functionCalling(userContent);
+    if (functionResult?.type === 'image_generation') {
+      const imgResult = functionResult as ImageGenerationResult;
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: {
+          text: '',
+          images: imgResult.images
+        }
+      }]);
+      return;
+    }
+    const enhancedContent = createEnhancedPrompt(userContent, functionResult);
+
+    const chatMessages = createChatMessages(
+      enhancedContent,
+      systemPrompt,
+      previousMessages.slice(0, -1)
+    );
+
+    const response = await sendChatRequest(chatMessages);
+    const reader = response.body?.getReader();
+
+    if (!reader) {
+      throw new Error('No reader available');
+    }
+
+    const accumulatedResponse = await processStreamResponse(reader);
+
+    if (accumulatedResponse) {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: accumulatedResponse
+      }]);
+    }
+  } catch (err) {
+    console.error('Chat error:', err);
+    setError(err instanceof Error ? err.message : 'Failed to send message');
+  } finally {
+    setIsLoading(false);
+    setPartialResponse('');
+  }
+}, [messages, systemPrompt, parameters]);
 
   return {
     messages,

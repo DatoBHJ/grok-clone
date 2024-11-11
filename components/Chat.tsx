@@ -1,9 +1,10 @@
 // Chat.tsx
 import React, { useCallback, useState } from 'react';
-import { Message } from '@/types/chat';
+import { Message,MessageContent } from '@/types/chat';
 import { ChatInput } from './ChatInput';
 import { ChatMessage } from './ChatMessage';
 import { Pencil, X } from 'lucide-react';
+
 
 interface ChatProps {
   messages: Message[];
@@ -30,6 +31,7 @@ export function Chat({
   const displayMessages = messages.filter(
     (message) => message.role === 'assistant' || message.role === 'user'
   );
+
 
   const handleStartEdit = (index: number, content: string) => {
     setEditingIndex(index);
@@ -59,7 +61,7 @@ export function Chat({
             key={index}
             messageIndex={index}
             role={message.role}
-            content={typeof message.content === 'string' ? message.content : (message.content as { text: string }).text}
+            content={message.content}
             onStartEdit={message.role === 'user' ? handleStartEdit : undefined}
             onRegenerate={message.role === 'assistant' ? () => regenerateResponse(index) : undefined}
           />
