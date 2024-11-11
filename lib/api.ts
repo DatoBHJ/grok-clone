@@ -1,3 +1,4 @@
+//lib/api.ts
 import { Message } from '@/types/chat'
 
 export async function sendMessage(messages: Message[]) {

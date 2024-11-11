@@ -179,7 +179,7 @@ export default function Home() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        {/* <div className="grid grid-cols-2 gap-4 mb-4">
           <ImageCard 
             title="A speeding roadster"
             imageSrc="/api/placeholder/600/400"
@@ -188,13 +188,13 @@ export default function Home() {
             title="A robot in a flower field"
             imageSrc="/api/placeholder/600/400"
           />
-        </div>
+        </div> */}
 
         <p className="text-center dark:text-zinc-700 text-slate-300 text-md font-medium mb-8">
           Images are generated with FLUX.1 by Black Forest Labs
         </p>
 
-        <div className="grid grid-cols-2 gap-4">
+        {/* <div className="grid grid-cols-2 gap-4">
           <NewsCard 
             title="M4 Mac Mini: Power and Price Debate"
             meta="Trending now · Technology · 821 posts"
@@ -203,7 +203,7 @@ export default function Home() {
             title="Sam Altman's AGI Prediction for 2025"
             meta="16 hours ago · Technology · 6K posts"
           />
-        </div>
+        </div> */}
       </main>
     </div>
   );

@@ -166,36 +166,32 @@ export function useChat(options: UseChatOptions = {}) {
   }, [messages, systemPrompt, parameters])
 
   const editMessage = useCallback(async (index: number, newContent: string) => {
-    setIsLoading(true)
-    setError(null)
-    setPartialResponse('')
-
     try {
-      // 1. functionCalling으로 새로운 컨텍스트 가져오기
-      const functionResult = await functionCalling(newContent)
-      console.log('functionResult:', functionResult)
+      // 1. 먼저 상태들을 초기화하고 메시지를 즉시 제거
+      setIsLoading(true)
+      setError(null)
+      setPartialResponse('')
       
-      // 2. 향상된 프롬프트 생성
+      // 2. 이전 메시지들만 유지하고 새로운 메시지로 업데이트
+      setMessages(prev => {
+        const newMessages = [...prev]
+        newMessages[index] = {
+          ...newMessages[index],
+          content: newContent
+        }
+        return newMessages.slice(0, index + 1)
+      })
+
+      // 3. 비동기 작업 시작
+      const functionResult = await functionCalling(newContent)
       const enhancedContent = createEnhancedPrompt(newContent, functionResult)
       
-      // 편집된 메시지까지의 이전 메시지들만 유지
       const previousMessages = messages.slice(0, index)
-      
-      // 새로운 메시지 세트 생성
       const chatMessages = createChatMessages(
         enhancedContent,
         systemPrompt,
         previousMessages
       )
-
-      setMessages(prev => {
-        const newMessages = [...prev]
-        newMessages[index] = {
-          ...newMessages[index],
-          content: newContent // 원본 메시지 저장
-        }
-        return newMessages.slice(0, index + 1)
-      })
 
       const response = await sendChatRequest(chatMessages)
       const reader = response.body?.getReader()
@@ -207,7 +203,7 @@ export function useChat(options: UseChatOptions = {}) {
       const accumulatedResponse = await processStreamResponse(reader)
 
       if (accumulatedResponse) {
-        setMessages(prev => [...prev.slice(0, index + 1), {
+        setMessages(prev => [...prev, {
           role: 'assistant',
           content: accumulatedResponse
         }])
@@ -215,6 +211,8 @@ export function useChat(options: UseChatOptions = {}) {
     } catch (err) {
       console.error('Chat error:', err)
       setError(err instanceof Error ? err.message : 'Failed to update message')
+      // 에러 발생시 원래 메시지 복구
+      setMessages(messages)
     } finally {
       setIsLoading(false)
       setPartialResponse('')
