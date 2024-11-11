@@ -8,7 +8,7 @@ interface NewsResult {
   }>;
 }
 
-interface ImageGenerationResult {
+interface ImageResult {
   type: 'image_url';
   images: Array<{
     url: string;
@@ -21,7 +21,7 @@ interface TickerResult {
   data: any;
 }
 
-type FunctionResult = NewsResult | ImageGenerationResult | TickerResult | null;
+type FunctionResult = NewsResult | ImageResult | TickerResult | null;
 
 export async function functionCalling(message: string): Promise<FunctionResult> {
   try {

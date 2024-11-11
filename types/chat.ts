@@ -27,7 +27,7 @@ export interface NewsResult {
   }>;
 }
 
-export interface ImageGenerationResult {
+export interface ImageResult {
   type: 'image_url';
   images: Array<{
     url: string;
@@ -40,7 +40,7 @@ export interface TickerResult {
   data: any;
 }
 
-export type FunctionResult = NewsResult | ImageGenerationResult | TickerResult | null;
+export type FunctionResult = NewsResult | ImageResult | TickerResult | null;
 
 export interface ChatRequestMessage {
   role: Role;

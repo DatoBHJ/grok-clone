@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { Message, ChatResponse, defaultConfig, createChatMessages, ChatParameters, ImageGenerationResult, ChatRequestMessage } from '@/types/chat'
+import { Message, ChatResponse, defaultConfig, createChatMessages, ChatParameters, ImageResult, ChatRequestMessage } from '@/types/chat'
 import { functionCalling } from '@/app/function-calling'
 
 interface UseChatOptions {
@@ -119,7 +119,7 @@ export function useChat(options: UseChatOptions = {}) {
       
       if (functionResult?.type === 'image_url') {
         // 이미지 생성의 경우 chat completion 요청을 하지 않고 바로 이미지 응답
-        const imgResult = functionResult as ImageGenerationResult;
+        const imgResult = functionResult as ImageResult;
         setMessages(prev => [...prev, {
           role: 'assistant',
           content: {
@@ -198,7 +198,7 @@ const editMessage = useCallback(async (index: number, newContent: string) => {
 
     const functionResult = await functionCalling(newContent);
     if (functionResult?.type === 'image_url') {
-      const imgResult = functionResult as ImageGenerationResult;
+      const imgResult = functionResult as ImageResult;
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: {
@@ -266,7 +266,7 @@ const regenerateResponse = useCallback(async (messageIndex: number) => {
 
     const functionResult = await functionCalling(userContent);
     if (functionResult?.type === 'image_url') {
-      const imgResult = functionResult as ImageGenerationResult;
+      const imgResult = functionResult as ImageResult;
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: {
