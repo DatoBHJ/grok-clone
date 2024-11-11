@@ -4,7 +4,6 @@ import React from 'react';
 interface ChatImageProps {
   images: Array<{
     url: string;
-    // content_type: string;
   }>;
 }
 

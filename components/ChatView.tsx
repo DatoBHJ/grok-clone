@@ -7,7 +7,6 @@ interface MessageContent {
   text: string;
   images?: Array<{
     url: string;
-    // content_type: string;
   }>;
 }
 

@@ -7,7 +7,6 @@ export interface MessageContent {
   text: string;
   images?: Array<{
     url: string;
-    // content_type: string;
   }>;
 }
 
@@ -31,7 +30,6 @@ export interface ImageResult {
   type: 'image_url';
   images: Array<{
     url: string;
-    // content_type: string;
   }>;
 }
 

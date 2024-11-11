@@ -11,7 +11,6 @@ import { fal } from "@fal-ai/client";
 interface FluxImageResponse {
   images: Array<{
     url: string;
-    // content_type: string;
   }>;
   seed: number;
   timings: {
@@ -167,7 +166,6 @@ async function generateImage(prompt: string) {
       type: 'image_url' as const,
       images: result.data.images.map(img => ({
         url: img.url,
-        // content_type: img.content_type
       }))
     };
   } catch (error) {

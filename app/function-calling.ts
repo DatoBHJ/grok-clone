@@ -12,7 +12,6 @@ interface ImageResult {
   type: 'image_url';
   images: Array<{
     url: string;
-    // content_type: string;
   }>;
 }
 
