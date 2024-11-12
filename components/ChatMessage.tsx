@@ -2,8 +2,8 @@ import { MessageContent } from "@/types/chat"
 import { Copy, Pencil, RotateCcw, Share, ThumbsDown, ThumbsUp } from "lucide-react"
 import { useState } from "react"
 import ChatView from "./ChatView"
+import LinkPreview from "./LinkPreview"
 
-// ChatMessage.tsx
 interface ChatMessageProps {
   role: 'assistant' | 'user' | 'system'
   content: string | MessageContent
@@ -30,10 +30,10 @@ export function ChatMessage({
     }
   };
 
-  // Get the text content for copying
   const textContent = typeof content === 'string' ? content : content.text;
   const hasText = textContent.trim().length > 0;
   const hasImages = typeof content !== 'string' && content.images && content.images.length > 0;
+  const hasLinks = typeof content !== 'string' && content.links && content.links.length > 0;
 
   return (
     <div className="py-6">
@@ -71,6 +71,9 @@ export function ChatMessage({
                   <ChatView content={content} />
                 </div>
               </>
+            )}
+            {hasLinks && typeof content !== 'string' && (
+              <LinkPreview links={content.links} />
             )}
             {hasImages && (
               <>

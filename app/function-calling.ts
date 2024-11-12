@@ -1,28 +1,5 @@
 // function-calling.ts
-interface NewsResult {
-  type: 'news_search';
-  news: Array<{ 
-    title: string; 
-    snippet: string; 
-    link: string; 
-  }>;
-}
-
-interface ImageResult {
-  type: 'image_url';
-  images: Array<{
-    url: string;
-  }>;
-}
-
-interface TickerResult {
-  type: 'ticker';
-  data: any;
-}
-
-type FunctionResult = NewsResult | ImageResult | TickerResult | null;
-
-export async function functionCalling(message: string): Promise<FunctionResult> {
+export async function functionCalling(message: string): Promise<any> {
   try {
     const response = await fetch('/api/function-calling', {
       method: 'POST',
@@ -44,7 +21,7 @@ export async function functionCalling(message: string): Promise<FunctionResult> 
       return null;
     }
 
-    return result as FunctionResult;
+    return result as any;
   } catch (error) {
     console.error('Function calling error:', error);
     return null;

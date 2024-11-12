@@ -3,11 +3,21 @@
 
 import { config } from "@/app/config"
 
+
+export interface LinkPreviewType {
+  url: string;
+  title: string;
+  description?: string;
+  image?: string;
+  domain?: string;
+}
+
 export interface MessageContent {
   text: string;
   images?: Array<{
     url: string;
   }>;
+  links?: LinkPreviewType[];
 }
 
 export type Role = 'system' | 'user' | 'assistant';
@@ -16,29 +26,6 @@ export interface Message {
   role: Role
   content: string | MessageContent;
 }
-
-export interface NewsResult {
-  type: 'news_search';
-  news: Array<{ 
-    title: string; 
-    snippet: string; 
-    link: string; 
-  }>;
-}
-
-export interface ImageResult {
-  type: 'image_url';
-  images: Array<{
-    url: string;
-  }>;
-}
-
-export interface TickerResult {
-  type: 'ticker';
-  data: any;
-}
-
-export type FunctionResult = NewsResult | ImageResult | TickerResult | null;
 
 export interface ChatRequestMessage {
   role: Role;

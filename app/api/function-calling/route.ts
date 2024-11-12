@@ -2,44 +2,14 @@
 import { OpenAI } from 'openai'
 import { config } from '@/app/config'
 import { type ChatCompletionTool } from 'openai/resources/chat/completions'
-
-// app/api/function-calling/route.ts
-
 import { fal } from "@fal-ai/client";
-
-// Flux API 응답 타입 정의
-interface FluxImageResponse {
-  images: Array<{
-    url: string;
-  }>;
-  seed: number;
-  timings: {
-    total: number;
-  };
-}
-
-
-interface Place {
-  position: number;
-  title: string;
-  address: string;
-  latitude: number;
-  longitude: number;
-  rating: number;
-  ratingCount: number;
-  category: string;
-  phoneNumber: string;
-  website: string;
-  cid: string;
-}
-
 
 const client = new OpenAI({
   apiKey: config.API_KEY,
   baseURL: config.BaseURL,
 })
 
-type FunctionName = "getTickers" | "searchPlaces" | "goShopping" | "searchNews" | "generateImage";
+type FunctionName = "getTickers" | "searchPlaces" | "goShopping" | "searchNews" | "generateImage" | "searchTweets";
 
 const functions: ChatCompletionTool[] = [
   {
@@ -131,6 +101,23 @@ const functions: ChatCompletionTool[] = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "searchTweets",
+      description: "Search for recent tweets (within last 7 days) when user wants to find Twitter/X posts",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "The search query for tweets",
+          },
+        },
+        required: ["query"],
+      },
+    },
+  },
 ];
 
 
@@ -140,7 +127,7 @@ async function generateImage(prompt: string) {
       credentials: process.env.FAL_KEY
     });
 
-    const result = await fal.subscribe<FluxImageResponse>("fal-ai/fast-turbo-diffusion", {
+    const result = await fal.subscribe<any>("fal-ai/fast-turbo-diffusion", {
       input: {
         prompt: prompt,
         model_name: "stabilityai/sdxl-turbo",
@@ -164,7 +151,7 @@ async function generateImage(prompt: string) {
 
     return {
       type: 'image_url' as const,
-      images: result.data.images.map(img => ({
+      images: result.data.images.map((img: { url: any; }) => ({
         url: img.url,
       }))
     };
@@ -219,7 +206,7 @@ async function searchPlaces(query: string, location: string) {
     const data = await response.json()
     return {
       type: 'places' as const,
-      places: data.places.map((place: Place) => ({
+      places: data.places.map((place: any) => ({
         position: place.position,
         title: place.title,
         address: place.address,
@@ -266,12 +253,92 @@ async function goShopping(query: string) {
 }
 
 async function getTickers(ticker: string) {
-  return {
-    type: 'ticker' as const,
-    data: ticker
+  try {
+    // Then fetch related news about the company
+    const company = ticker.split(':')[1]; // Extract company symbol (e.g., 'NVDA' from 'NASDAQ:NVDA')
+    const newsResponse = await fetch('https://google.serper.dev/news', {
+      method: 'POST',
+      headers: {
+        'X-API-KEY': process.env.SERPER_API_KEY!,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 
+        num: 10,
+        q: `${company} stock market news`,
+        tbs: 'qdr:w',
+      })
+    });
+
+    if (!newsResponse.ok) {
+      throw new Error(`News search failed with status: ${newsResponse.status}`);
+    }
+
+    const newsData = await newsResponse.json();
+    
+    // Combine ticker and news information
+    return {
+      type: 'stock_info' as const,
+      data: ticker,
+      news: newsData.news.map((article: any) => ({
+        title: article.title,
+        link: article.link,
+        snippet: article.snippet,
+        date: article.date,
+        source: article.source
+      }))
+    };
+  } catch (error) {
+    console.error('Error fetching stock info and news:', error);
+    throw error;
   }
 }
 
+async function searchTweets(query: string) {
+  try {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const dateString = sevenDaysAgo.toISOString().split('T')[0];
+    
+    // 직접 트윗 URL 패턴으로 검색
+    const enhancedQuery = `${query} inurl:status twitter.com OR x.com after:${dateString}`;
+    
+    const response = await fetch('https://google.serper.dev/search', {
+      method: 'POST',
+      headers: {
+        'X-API-KEY': process.env.SERPER_API_KEY!,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 
+        q: enhancedQuery,
+        num: 10,
+        type: 'search',
+        tbs: 'qdr:w',
+        // gl: 'us'
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Tweet search failed with status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('Tweet search data:', data);
+    
+    const tweets = data.organic.map((result: any) => ({
+      title: result.title,
+      link: result.link,
+      snippet: result.snippet,
+    }));
+
+    return {
+      type: 'tweets' as const,
+      tweets
+    };
+  } catch (error) {
+    console.error('Error searching tweets:', error);
+    throw error;
+  }
+}
 
 const availableFunctions: Record<FunctionName, Function> = {
   getTickers,
@@ -279,6 +346,7 @@ const availableFunctions: Record<FunctionName, Function> = {
   goShopping,
   searchNews,
   generateImage,
+  searchTweets
 };
 
 
@@ -301,14 +369,14 @@ export async function POST(req: Request) {
           role: "system", 
           content: `You are a helpful assistant. Only use functions when specifically needed:
     
-          - Only call searchTwitter when user explicitly asks for Twitter content or tweets
-          - Only call searchNews when user asks for news or current events
+          - For stock-related queries, use getTickers to get both stock symbol and recent news
+          - Only call searchNews when user asks for general news or current events
           - Only call generateImage when user wants to create or generate images
-          - Only call getTickers when user asks about stocks or company prices
           - Only call searchPlaces when user needs location information
           - Only call goShopping when user wants to buy or find products
+          - Only call searchTweets when user wants to find recent posts/updates from Twitter/X
     
-          For general conversation, greetings, or basic questions, DO NOT call any functions.` 
+          When discussing stocks, always analyze both the ticker and recent news to provide comprehensive information.` 
         },
         {
           role: "user",
@@ -325,7 +393,6 @@ export async function POST(req: Request) {
       return Response.json({ type: null, data: null })
     }
 
-    // Execute function if called
     const functionCall = toolCalls[0]
     const functionName = functionCall.function.name as FunctionName
     const functionToCall = availableFunctions[functionName]
@@ -349,6 +416,9 @@ export async function POST(req: Request) {
           break
         case 'generateImage':
           result = await functionToCall(args.prompt)
+          break
+        case 'searchTweets':
+          result = await functionToCall(args.query)
           break
       }
 

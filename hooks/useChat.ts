@@ -1,15 +1,11 @@
 import { useState, useCallback } from 'react'
-import { Message, ChatResponse, defaultConfig, createChatMessages, ChatParameters, ImageResult, ChatRequestMessage } from '@/types/chat'
+import { Message, defaultConfig, createChatMessages, ChatParameters, ChatRequestMessage, MessageContent } from '@/types/chat'
 import { functionCalling } from '@/app/function-calling'
+import { config } from '@/app/config'
 
 interface UseChatOptions {
   systemPrompt?: string
   parameters?: Partial<ChatParameters>
-}
-
-interface FunctionCallResult {
-  type: string;
-  [key: string]: any;
 }
 
 export function useChat(options: UseChatOptions = {}) {
@@ -69,36 +65,77 @@ export function useChat(options: UseChatOptions = {}) {
     setPartialResponse('')
   }
 
-  const createEnhancedPrompt = (userMessage: string, functionResult: FunctionCallResult | null) => {
+  const createEnhancedPrompt = (userMessage: string, functionResult: any | null) => {
     let enhancedPrompt = userMessage
+    let links = []
 
     if (functionResult) {
       switch (functionResult.type) {
+        case 'stock_info':
+          enhancedPrompt += `\n\nStock Information:\nTicker: ${functionResult.data}\n\nRecent news about this stock:\n${functionResult.news
+            .slice(0, config.numberOfPagesToScan)
+            .map((item: any) => `- ${item.title}: ${item.snippet} (${item.date})`)
+            .join('\n')}`
+          links = functionResult.news.slice(0, config.numberOfPagesToScan).map((item: any) => ({
+            url: item.link,
+            title: item.title,
+            description: item.snippet,
+            domain: new URL(item.link).hostname
+          }))
+          break
         case 'news_search':
           enhancedPrompt += `\n\nRecent news context:\n${functionResult.news
-            .slice(0, 3)
-            .map((item: any) => `- ${item.title}: ${item.snippet}`)
+            .slice(0, config.numberOfPagesToScan)
+            .map((item: any) => `- ${item.title}: ${item.snippet} (${item.link})`)
             .join('\n')}`
+          links = functionResult.news.slice(0, config.numberOfPagesToScan).map((item: any) => ({
+            url: item.link,
+            title: item.title,
+            description: item.snippet,
+            domain: new URL(item.link).hostname
+          }))
           break
         case 'places':
           enhancedPrompt += `\n\nPlaces context:\n${functionResult.places
-            .slice(0, 3)
+            .slice(0, config.numberOfPagesToScan)
             .map((place: any) => `- ${place.title}: ${place.address}`)
             .join('\n')}`
+          links = functionResult.places.slice(0, config.numberOfPagesToScan).map((place: any) => ({
+            url: `https://maps.google.com/?q=${encodeURIComponent(place.address)}`,
+            title: place.title,
+            description: place.address,
+            domain: 'maps.google.com'
+          }))
           break
         case 'shopping':
           enhancedPrompt += `\n\nShopping context:\n${functionResult.shopping
-            .slice(0, 3)
+            .slice(0, config.numberOfPagesToScan)
             .map((item: any) => `- ${item.title}: ${item.price}`)
             .join('\n')}`
+          links = functionResult.shopping.slice(0, config.numberOfPagesToScan).map((item: any) => ({
+            url: item.link,
+            title: item.title,
+            description: `${item.price}`,
+            image: item.image,
+            domain: new URL(item.link).hostname
+          }))
           break
-        case 'ticker':
-          enhancedPrompt += `\n\nStock context: ${functionResult.data}`
+        case 'tweets':
+          enhancedPrompt += `\n\nRecent tweets:\n${functionResult.tweets
+            .slice(0, config.numberOfTweetToScan)
+            .map((tweet: any) => `- ${tweet.title}\n  ${tweet.snippet} (${tweet.link})`)
+            .join('\n')}`
+          links = functionResult.tweets.slice(0, config.numberOfTweetToScan).map((tweet: any) => ({
+            url: tweet.link,
+            title: tweet.title,
+            description: tweet.snippet,
+            domain: 'twitter.com'
+          }))
           break
       }
     }
 
-    return enhancedPrompt
+    return { enhancedPrompt, links }
   }
 
 
@@ -118,21 +155,20 @@ export function useChat(options: UseChatOptions = {}) {
       console.log('functionResult:', functionResult);
       
       if (functionResult?.type === 'image_url') {
-        // 이미지 생성의 경우 chat completion 요청을 하지 않고 바로 이미지 응답
-        const imgResult = functionResult as ImageResult;
+        const imgResult = functionResult as any;
         setMessages(prev => [...prev, {
           role: 'assistant',
           content: {
-            text: '', // 빈 텍스트
+            text: '', 
             images: imgResult.images
           }
         }]);
         return;
       }
-    
       
-      const enhancedContent = createEnhancedPrompt(content, functionResult);
-      const chatMessages = createChatMessages(enhancedContent, systemPrompt, messages);
+      const { enhancedPrompt, links } = createEnhancedPrompt(content, functionResult);
+      console.log('enhancedPrompt:', enhancedPrompt);
+      const chatMessages = createChatMessages(enhancedPrompt, systemPrompt, messages);
       
       const response = await sendChatRequest(chatMessages);
       const reader = response.body?.getReader();
@@ -143,21 +179,26 @@ export function useChat(options: UseChatOptions = {}) {
   
       const accumulatedResponse = await processStreamResponse(reader);
   
-
-    if (accumulatedResponse) {
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: accumulatedResponse
-      }]);
+      if (accumulatedResponse) {
+        const messageContent: MessageContent = {
+          text: accumulatedResponse
+        }
+        if (links && links.length > 0) {
+          messageContent.links = links;
+        }
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: messageContent
+        }]);
+      }
+    } catch (err) {
+      console.error('Chat error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to send message');
+    } finally {
+      setIsLoading(false);
+      setPartialResponse('');
     }
-  } catch (err) {
-    console.error('Chat error:', err);
-    setError(err instanceof Error ? err.message : 'Failed to send message');
-  } finally {
-    setIsLoading(false);
-    setPartialResponse('');
-  }
-}, [messages, systemPrompt, parameters]);
+  }, [messages, systemPrompt, parameters]);
 
 async function sendChatRequest(chatMessages: ChatRequestMessage[]) {
   const response = await fetch('/api/chat', {
@@ -198,7 +239,7 @@ const editMessage = useCallback(async (index: number, newContent: string) => {
 
     const functionResult = await functionCalling(newContent);
     if (functionResult?.type === 'image_url') {
-      const imgResult = functionResult as ImageResult;
+      const imgResult = functionResult as any;
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: {
@@ -209,11 +250,11 @@ const editMessage = useCallback(async (index: number, newContent: string) => {
       return;
     }
 
-    const enhancedContent = createEnhancedPrompt(newContent, functionResult);
+    const { enhancedPrompt, links } = createEnhancedPrompt(newContent, functionResult);
     
     const previousMessages = messages.slice(0, index);
     const chatMessages = createChatMessages(
-      enhancedContent,
+      enhancedPrompt,
       systemPrompt,
       previousMessages
     );
@@ -228,9 +269,15 @@ const editMessage = useCallback(async (index: number, newContent: string) => {
     const accumulatedResponse = await processStreamResponse(reader);
 
     if (accumulatedResponse) {
+      const messageContent: MessageContent = {
+        text: accumulatedResponse
+      }
+      if (links && links.length > 0) {
+        messageContent.links = links;
+      }
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: accumulatedResponse
+        content: messageContent
       }]);
     }
   } catch (err) {
@@ -266,7 +313,7 @@ const regenerateResponse = useCallback(async (messageIndex: number) => {
 
     const functionResult = await functionCalling(userContent);
     if (functionResult?.type === 'image_url') {
-      const imgResult = functionResult as ImageResult;
+      const imgResult = functionResult as any;
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: {
@@ -276,10 +323,11 @@ const regenerateResponse = useCallback(async (messageIndex: number) => {
       }]);
       return;
     }
-    const enhancedContent = createEnhancedPrompt(userContent, functionResult);
+
+    const { enhancedPrompt, links } = createEnhancedPrompt(userContent, functionResult);
 
     const chatMessages = createChatMessages(
-      enhancedContent,
+      enhancedPrompt,
       systemPrompt,
       previousMessages.slice(0, -1)
     );
@@ -294,9 +342,15 @@ const regenerateResponse = useCallback(async (messageIndex: number) => {
     const accumulatedResponse = await processStreamResponse(reader);
 
     if (accumulatedResponse) {
+      const messageContent: MessageContent = {
+        text: accumulatedResponse
+      }
+      if (links && links.length > 0) {
+        messageContent.links = links;
+      }
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: accumulatedResponse
+        content: messageContent
       }]);
     }
   } catch (err) {
