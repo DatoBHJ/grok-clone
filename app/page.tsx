@@ -113,6 +113,7 @@ export default function Home() {
   const handleBack = () => {
     setShowChat(false);
     resetChat();
+    setInputValue('');
   };
 
   const handleSuggestionClick = async (title: string) => {
