@@ -299,15 +299,16 @@ export async function POST(req: Request) {
       messages: [
         { 
           role: "system", 
-          content: `You are a function calling agent. You will be given a query and a list of functions.
-          Your task is to call the appropriate function based on the query and return the result in JSON format.
-          ONLY CALL A FUNCTION IF YOU ARE HIGHLY CONFIDENT IT WILL BE USED.
-          
-          Choose the most relevant function based on the user's query:
-          - For stock/company queries, use getTickers
-          - For location-based searches, use searchPlaces
-          - For product searches, use goShopping
-          - For news-related queries, use searchNews` 
+          content: `You are a helpful assistant. Only use functions when specifically needed:
+    
+          - Only call searchTwitter when user explicitly asks for Twitter content or tweets
+          - Only call searchNews when user asks for news or current events
+          - Only call generateImage when user wants to create or generate images
+          - Only call getTickers when user asks about stocks or company prices
+          - Only call searchPlaces when user needs location information
+          - Only call goShopping when user wants to buy or find products
+    
+          For general conversation, greetings, or basic questions, DO NOT call any functions.` 
         },
         {
           role: "user",
@@ -316,7 +317,7 @@ export async function POST(req: Request) {
       ],
       tools: functions,
       tool_choice: "auto"
-    })
+    });
 
     const toolCalls = response.choices[0]?.message?.tool_calls
 
