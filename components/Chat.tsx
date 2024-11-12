@@ -54,37 +54,35 @@ export function Chat({
   }, [editingIndex, editMessage, addMessage]);
 
   return (
-    <div className="flex flex-col min-h-0 h-full">
-      <div className="flex-1 overflow-y-auto">
-        <div className="pb-[140px]">
-          {displayMessages.map((message, index) => (
-            <ChatMessage
-              key={index}
-              messageIndex={index}
-              role={message.role}
-              content={message.content}
-              onStartEdit={message.role === 'user' ? handleStartEdit : undefined}
-              onRegenerate={message.role === 'assistant' ? () => regenerateResponse(index) : undefined}
-            />
-          ))}
-          {partialResponse && (
-            <ChatMessage 
-              role="assistant" 
-              content={partialResponse} 
-              messageIndex={-1}
-            />
-          )}
-          {isLoading && !partialResponse && (
-            <div className="py-4 text-center text-zinc-500 dark:text-zinc-400">
-              AI is thinking...
-            </div>
-          )}
-          {error && (
-            <div className="py-4 text-center text-red-500">
-              {error}
-            </div>
-          )}
-        </div>
+    <div className="h-full">
+      <div className="pb-32">
+        {displayMessages.map((message, index) => (
+          <ChatMessage
+            key={index}
+            messageIndex={index}
+            role={message.role}
+            content={message.content}
+            onStartEdit={message.role === 'user' ? handleStartEdit : undefined}
+            onRegenerate={message.role === 'assistant' ? () => regenerateResponse(index) : undefined}
+          />
+        ))}
+        {partialResponse && (
+          <ChatMessage 
+            role="assistant" 
+            content={partialResponse} 
+            messageIndex={-1}
+          />
+        )}
+        {isLoading && !partialResponse && (
+          <div className="py-4 text-center text-zinc-500 dark:text-zinc-400">
+            AI is thinking...
+          </div>
+        )}
+        {error && (
+          <div className="py-4 text-center text-red-500">
+            {error}
+          </div>
+        )}
       </div>
       
       <div className="fixed bottom-0 left-0 right-0 bg-background">
