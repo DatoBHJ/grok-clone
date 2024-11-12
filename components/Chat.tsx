@@ -54,8 +54,8 @@ export function Chat({
   }, [editingIndex, editMessage, addMessage]);
 
   return (
-    <div className="h-full">
-      <div className="pb-32">
+    <div className="relative w-full h-full">
+      <div className="w-full h-full">
         {displayMessages.map((message, index) => (
           <ChatMessage
             key={index}
@@ -83,6 +83,7 @@ export function Chat({
             {error}
           </div>
         )}
+        <div className="h-32"></div>
       </div>
       
       <div className="fixed bottom-0 left-0 right-0 bg-background">
