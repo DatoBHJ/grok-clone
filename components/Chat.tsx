@@ -54,8 +54,8 @@ export function Chat({
   }, [editingIndex, editMessage, addMessage]);
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto pb-24">
+    <div className="relative flex flex-col h-full">
+      <div className="absolute inset-0 overflow-y-auto pb-[120px]">
         {displayMessages.map((message, index) => (
           <ChatMessage
             key={index}
@@ -85,7 +85,7 @@ export function Chat({
         )}
       </div>
       
-      <div className="fixed bottom-0 left-0 right-0">
+      <div className="fixed bottom-0 left-0 right-0 bg-background">
         {editingIndex !== null && (
           <div>
             <div className="max-w-3xl mx-auto">
