@@ -15,7 +15,7 @@ interface ChatViewProps {
 }
 
 const PROSE_STYLES = {
-  container: "w-full overflow-hidden",
+  container: "w-full",
   article: "prose dark:prose-invert prose-sm sm:prose-base lg:prose-lg xl:prose-xl max-w-none",
   heading1: "text-3xl font-bold my-4 break-words font-handwriting",
   heading2: "text-2xl font-extrabold mt-6 mb-3 break-words font-handwriting",
