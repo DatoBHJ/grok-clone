@@ -190,6 +190,7 @@ export function useChat(options: UseChatOptions = {}) {
           role: 'assistant',
           content: messageContent
         }]);
+        console.log('chat history:', messages);
       }
     } catch (err) {
       console.error('Chat error:', err);
