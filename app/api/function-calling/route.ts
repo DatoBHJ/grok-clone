@@ -363,20 +363,17 @@ export async function POST(req: Request) {
     }
 
     const response = await client.chat.completions.create({
-      model: config.model,
+      temperature: 0.0,
+      model: config.xAI_model,
       messages: [
         { 
           role: "system", 
-          content: `You are a helpful assistant. Only use functions when specifically needed:
-    
-          - For stock-related queries, use getTickers to get both stock symbol and recent news
-          - Only call searchNews when user asks for general news or current events
-          - Only call generateImage when user wants to create or generate images
-          - Only call searchPlaces when user needs location information
-          - Only call goShopping when user wants to buy or find products
-          - Only call searchTweets when user wants to find recent posts/updates from Twitter/X
-    
-          When discussing stocks, always analyze both the ticker and recent news to provide comprehensive information.` 
+          content: `
+          You are a function calling agent. 
+          You will be given a query and a list of functions. 
+          Your task is to call the appropriate function based on the query and return the result in JSON format. 
+          ONLY CALL A FUNCTION IF YOU ARE HIGHLY CONFIDENT IT WILL BE USED
+          Remember, call the function when you are ABSOLUTELY SURE it will be used.` 
         },
         {
           role: "user",
@@ -389,8 +386,9 @@ export async function POST(req: Request) {
 
     const toolCalls = response.choices[0]?.message?.tool_calls
 
+    // If no tool calls, return a valid response with null type
     if (!toolCalls || toolCalls.length === 0) {
-      return Response.json({ type: null, data: null })
+      return Response.json({ type: null, data: null }, { status: 200 })
     }
 
     const functionCall = toolCalls[0]
@@ -420,22 +418,24 @@ export async function POST(req: Request) {
         case 'searchTweets':
           result = await functionToCall(args.query)
           break
+        default:
+          return Response.json({ type: null, data: null }, { status: 200 })
       }
 
       return Response.json(result)
     } catch (error) {
       console.error(`Function execution error:`, error)
       return Response.json(
-        { error: 'Function execution failed' },
-        { status: 500 }
+        { type: null, data: null, error: 'Function execution failed' },
+        { status: 200 } // Changed to 200 to avoid triggering error handling
       )
     }
 
   } catch (error) {
     console.error('Function calling error:', error)
     return Response.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { type: null, data: null, error: 'Function calling failed' },
+      { status: 200 } // Changed to 200 to avoid triggering error handling
     )
   }
 }

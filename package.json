@@ -15,6 +15,7 @@
     "@radix-ui/react-dialog": "^1.1.2",
     "@radix-ui/react-slot": "^1.1.0",
     "@types/uuid": "^10.0.0",
+    "@vercel/blob": "^0.26.0",
     "ai": "^3.4.33",
     "class-variance-authority": "^0.7.0",
     "lucide-react": "^0.456.0",

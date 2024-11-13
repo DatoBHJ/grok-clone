@@ -139,10 +139,10 @@ export function useChat(options: UseChatOptions = {}) {
   }
 
 
-  const addMessage = useCallback(async (content: string) => {
+  const addMessage = useCallback(async (userInput: string) => {
     const userMessage: Message = {
       role: 'user',
-      content: content
+      content: userInput
     };
     setMessages(prev => [...prev, userMessage]);
     
@@ -151,7 +151,7 @@ export function useChat(options: UseChatOptions = {}) {
     setPartialResponse('');
   
     try {
-      const functionResult = await functionCalling(content);
+      const functionResult = await functionCalling(userInput);
       console.log('functionResult:', functionResult);
       
       if (functionResult?.type === 'image_url') {
@@ -166,7 +166,7 @@ export function useChat(options: UseChatOptions = {}) {
         return;
       }
       
-      const { enhancedPrompt, links } = createEnhancedPrompt(content, functionResult);
+      const { enhancedPrompt, links } = createEnhancedPrompt(userInput, functionResult);
       console.log('enhancedPrompt:', enhancedPrompt);
       const chatMessages = createChatMessages(enhancedPrompt, systemPrompt, messages);
       
@@ -222,7 +222,7 @@ async function sendChatRequest(chatMessages: ChatRequestMessage[]) {
   return response;
 }
 
-const editMessage = useCallback(async (index: number, newContent: string) => {
+const editMessage = useCallback(async (index: number, newUserInput: string) => {
   try {
     setIsLoading(true);
     setError(null);
@@ -232,12 +232,12 @@ const editMessage = useCallback(async (index: number, newContent: string) => {
       const newMessages = [...prev];
       newMessages[index] = {
         ...newMessages[index],
-        content: newContent
+        content: newUserInput
       };
       return newMessages.slice(0, index + 1);
     });
 
-    const functionResult = await functionCalling(newContent);
+    const functionResult = await functionCalling(newUserInput);
     if (functionResult?.type === 'image_url') {
       const imgResult = functionResult as any;
       setMessages(prev => [...prev, {
@@ -250,7 +250,7 @@ const editMessage = useCallback(async (index: number, newContent: string) => {
       return;
     }
 
-    const { enhancedPrompt, links } = createEnhancedPrompt(newContent, functionResult);
+    const { enhancedPrompt, links } = createEnhancedPrompt(newUserInput, functionResult);
     
     const previousMessages = messages.slice(0, index);
     const chatMessages = createChatMessages(

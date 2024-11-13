@@ -9,19 +9,21 @@ export async function functionCalling(message: string): Promise<any> {
       body: JSON.stringify({ message })
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('Function calling failed:', errorData.error || response.statusText);
-      return null;
-    }
-
+    // First try to parse the response as JSON
     const result = await response.json();
-    
-    if (!result || result.error || !result.type) {
+
+    // If response is not ok, handle the error
+    if (!response.ok) {
+      console.error('Function calling failed:', result.error || response.statusText);
       return null;
     }
 
-    return result as any;
+    // For cases where no function was called but the request was successful
+    if (!result || !result.type) {
+      return null;
+    }
+
+    return result;
   } catch (error) {
     console.error('Function calling error:', error);
     return null;
