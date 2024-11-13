@@ -363,8 +363,7 @@ export async function POST(req: Request) {
     }
 
     const response = await client.chat.completions.create({
-      temperature: 0.0,
-      model: config.xAI_model,
+      model: config.model,
       messages: [
         { 
           role: "system", 
@@ -373,6 +372,14 @@ export async function POST(req: Request) {
           You will be given a query and a list of functions. 
           Your task is to call the appropriate function based on the query and return the result in JSON format. 
           ONLY CALL A FUNCTION IF YOU ARE HIGHLY CONFIDENT IT WILL BE USED
+    
+          - For stock-related queries, use getTickers to get both stock symbol and recent news
+          - Only call searchNews when user asks for general news or current events
+          - Only call generateImage when user wants to create or generate images
+          - Only call searchPlaces when user needs location information
+          - Only call goShopping when user wants to buy or find products
+          - Only call searchTweets when user wants to find recent posts/updates from Twitter/X
+    
           Remember, call the function when you are ABSOLUTELY SURE it will be used.` 
         },
         {
