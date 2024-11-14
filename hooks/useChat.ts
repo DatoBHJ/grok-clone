@@ -51,7 +51,6 @@ export function useChat(options: UseChatOptions = {}) {
           }
         }
       }
-      console.log('accumulatedContent:', accumulatedContent)
       return accumulatedContent
     } catch (e) {
       console.error('Stream processing error:', e)
@@ -256,7 +255,7 @@ export function useChat(options: UseChatOptions = {}) {
       }
       
       const { enhancedPrompt, links } = createEnhancedPrompt(userInput, functionResult);
-      // console.log('enhancedPrompt:', enhancedPrompt);
+      console.log('enhancedPrompt:', enhancedPrompt);
       const chatMessages = createChatMessages(enhancedPrompt, systemPrompt, messages);
       
       const response = await sendChatRequest(chatMessages);
