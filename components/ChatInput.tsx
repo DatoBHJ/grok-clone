@@ -119,7 +119,7 @@ export function ChatInput({ onSend, initialValue = '', isLoading }: ChatInputPro
         </div>
       )}
       
-      <div className="relative">
+      <div className="relative ">
       <input
         ref={inputRef}
         type="text"

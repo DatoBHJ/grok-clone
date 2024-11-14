@@ -5,6 +5,12 @@ import { Share, SendHorizontal, Image, ArrowLeft, X } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Chat } from '@/components/Chat';
 import { useChat } from '@/hooks/useChat';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from './tooltip';
 
 const convertImageToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -66,13 +72,31 @@ const ImageCard = ({
   </div>
 );
 
-const NewsCard = ({ title, meta }: { title: string, meta: string }) => (
-  <Card className="bg-card hover:bg-card/80 transition-colors cursor-pointer border-0">
-    <CardContent className="p-4">
-      <h3 className="text-card-foreground text-base mb-2">{title}</h3>
-      <p className="text-card-foreground/60 text-sm">{meta}</p>
-    </CardContent>
-  </Card>
+const NewsCard = ({ title, meta }: { title: string; meta: string }) => (
+  <TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Card className="relative bg-card hover:bg-card/80 transition-colors cursor-pointer border-0 group">
+          <CardContent className="p-4">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <h3 className="text-card-foreground text-base mb-2">{title}</h3>
+                <p className="text-card-foreground/60 text-sm">{meta}</p>
+              </div>
+              <span className="inline-flex items-center rounded-md bg-blue-400/10 px-2 py-1 text-xs font-medium text-blue-400 ring-1 ring-inset ring-blue-400/30">
+                Soon
+              </span>
+            </div>
+            <div className="absolute inset-0 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <p className="text-sm text-muted-foreground font-medium">
+                News feature is coming soon!
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </TooltipTrigger>
+    </Tooltip>
+  </TooltipProvider>
 );
 
 const Header = ({ onBack }: { onBack: () => void }) => (
@@ -88,7 +112,7 @@ const Header = ({ onBack }: { onBack: () => void }) => (
         
         <div className="flex-1 flex justify-center items-center gap-3">
           <div className="flex items-center gap-2">
-            <h1 className="text-base font-semibold text-black dark:text-white">Grok 2</h1>
+            <h1 className="text-base font-semibold text-black dark:text-white">Groc 2</h1>
           </div>
           <span className="px-2 py-0.5 text-xs bg-blue-800/50 text-sky-500 rounded-md font-semibold">beta</span>
         </div>
@@ -198,7 +222,7 @@ export default function Home() {
     <div className="min-h-screen bg-background text-foreground">
       <main className="max-w-3xl mx-auto p-4">
         <div className="mb-16 mt-8">
-          <h1 className="text-4xl font-medium text-center mb-8 text-black dark:text-white">Grok</h1>
+          <h1 className="text-4xl font-medium text-center mb-8 text-black dark:text-white">Groc</h1>
           <div className="relative">
           <input
             type="text"
@@ -245,7 +269,7 @@ export default function Home() {
           )}
 
           <p className="text-center dark:text-zinc-700 text-slate-300 text-md font-medium mt-2">
-            Grok can make mistakes. Verify its outputs.
+            Groc can make mistakes. Verify its outputs.
           </p>
         </div>
 

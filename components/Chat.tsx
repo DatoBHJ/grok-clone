@@ -83,7 +83,7 @@ export function Chat({
 
   return (
     <>
-      <div className="pb-36">
+      <div className="pb-32">
         {displayMessages.map((message, index) => (
           <ChatMessage
             key={index}
@@ -167,7 +167,7 @@ export function Chat({
             </div>
           </div>
         )}
-        <div className="p-4 bg-white dark:bg-transparent">
+        <div className="p-4 mb-12 bg-white dark:bg-transparent">
           <ChatInput 
             onSend={handleSubmit}
             initialValue={editingContent}
