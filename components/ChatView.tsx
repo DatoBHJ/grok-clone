@@ -44,7 +44,6 @@ const PROSE_STYLES = {
 
 const ImageGrid: React.FC<{ images: Array<{ url: string }> }> = ({ images }) => {
   const handleImageClick = (imageUrl: string) => {
-    // base64 이미지 데이터를 새 창에서 보여주기
     const newWindow = window.open();
     if (newWindow) {
       newWindow.document.write(`

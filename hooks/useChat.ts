@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import { Message, defaultConfig, createChatMessages, ChatParameters, ChatRequestMessage, MessageContent } from '@/types/chat'
 import { functionCalling } from '@/app/function-calling'
 import { config } from '@/app/config'
+import { Groq } from 'groq-sdk'
 
 interface UseChatOptions {
   systemPrompt?: string
@@ -138,7 +139,76 @@ export function useChat(options: UseChatOptions = {}) {
     return { enhancedPrompt, links }
   }
 
+  const processImageChat = async (image: string, prompt: string = "What's in this image?") => {
+    try {
+      const response = await fetch('/api/image-chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ image, prompt })
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to process image chat');
+      }
+  
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No reader available');
+      }
+  
+      let accumulatedResponse = '';
+      const decoder = new TextDecoder();
+  
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+  
+        const chunk = decoder.decode(value);
+        const lines = chunk
+          .split('\n')
+          .filter(line => line.trim().startsWith('data:'))
+          .map(line => line.slice(5).trim());
+  
+        for (const line of lines) {
+          if (line === '[DONE]') continue;
+  
+          try {
+            const parsed = JSON.parse(line);
+            const content = parsed.content || '';
+            if (content) {
+              accumulatedResponse += content;
+              setPartialResponse(prev => prev + content);
+            }
+          } catch (e) {
+            console.debug('Failed to parse chunk:', line);
+            continue;
+          }
+        }
+      }
+  
+      return accumulatedResponse;
+    } catch (err) {
+      console.error('Image chat error:', err);
+      throw err;
+    }
+  };
 
+    
+
+  const isImageContent = (content: string | MessageContent): boolean => {
+    if (typeof content === 'string') {
+      try {
+        const parsed = JSON.parse(content);
+        return parsed.type === 'image' && parsed.image.startsWith('data:image');
+      } catch {
+        return content.startsWith('data:image') || content.startsWith('http');
+      }
+    }
+    return false;
+  };
+  
   const addMessage = useCallback(async (userInput: string) => {
     const userMessage: Message = {
       role: 'user',
@@ -151,8 +221,39 @@ export function useChat(options: UseChatOptions = {}) {
     setPartialResponse('');
   
     try {
+      // Check if input is stringified image data
+      let isImageChat = false;
+      let imageData = '';
+      let imagePrompt = '';
+  
+      try {
+        const parsed = JSON.parse(userInput);
+        if (parsed.type === 'image') {
+          isImageChat = true;
+          imageData = parsed.image;
+          imagePrompt = parsed.prompt;
+        }
+      } catch {
+        isImageChat = userInput.includes('data:image');
+        if (isImageChat) {
+          imageData = userInput;
+          imagePrompt = "What's in this image?";
+        }
+      }
+      
+      if (isImageChat) {
+        const imageResponse = await processImageChat(imageData, imagePrompt);
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: {
+            text: imageResponse,
+          }
+        }]);
+        return;
+      }
+
+      // Existing text chat logic
       const functionResult = await functionCalling(userInput);
-      console.log('functionResult:', functionResult);
       
       if (functionResult?.type === 'image_url') {
         const imgResult = functionResult as any;
@@ -190,7 +291,6 @@ export function useChat(options: UseChatOptions = {}) {
           role: 'assistant',
           content: messageContent
         }]);
-        console.log('chat history:', messages);
       }
     } catch (err) {
       console.error('Chat error:', err);
@@ -232,137 +332,200 @@ const editMessage = useCallback(async (index: number, newUserInput: string) => {
     setMessages(prev => {
       const newMessages = [...prev];
       newMessages[index] = {
-        ...newMessages[index],
+        role: 'user',
         content: newUserInput
       };
       return newMessages.slice(0, index + 1);
     });
 
-    const functionResult = await functionCalling(newUserInput);
-    if (functionResult?.type === 'image_url') {
-      const imgResult = functionResult as any;
-      setMessages(prev => [...prev, {
+    // Check if input is stringified image data
+    let isImageChat = false;
+    let imageData = '';
+    let imagePrompt = '';
+
+    try {
+      const parsed = JSON.parse(newUserInput);
+      if (parsed.type === 'image') {
+        isImageChat = true;
+        imageData = parsed.image;
+        imagePrompt = parsed.prompt;
+      }
+    } catch {
+      isImageChat = newUserInput.includes('data:image');
+      if (isImageChat) {
+        imageData = newUserInput;
+        imagePrompt = "What's in this image?";
+      }
+    }
+
+    if (isImageChat) {
+      const imageResponse = await processImageChat(imageData, imagePrompt);
+      setMessages(prev => [...prev.slice(0, index + 1), {
         role: 'assistant',
         content: {
-          text: '',
-          images: imgResult.images
+          text: imageResponse,
         }
       }]);
       return;
     }
 
-    const { enhancedPrompt, links } = createEnhancedPrompt(newUserInput, functionResult);
-    
-    const previousMessages = messages.slice(0, index);
-    const chatMessages = createChatMessages(
-      enhancedPrompt,
-      systemPrompt,
-      previousMessages
-    );
-
-    const response = await sendChatRequest(chatMessages);
-    const reader = response.body?.getReader();
-
-    if (!reader) {
-      throw new Error('No reader available');
-    }
-
-    const accumulatedResponse = await processStreamResponse(reader);
-
-    if (accumulatedResponse) {
-      const messageContent: MessageContent = {
-        text: accumulatedResponse
+      const functionResult = await functionCalling(newUserInput);
+      if (functionResult?.type === 'image_url') {
+        const imgResult = functionResult as any;
+        setMessages(prev => [...prev.slice(0, index + 1), {
+          role: 'assistant',
+          content: {
+            text: '',
+            images: imgResult.images
+          }
+        }]);
+        return;
       }
-      if (links && links.length > 0) {
-        messageContent.links = links;
+
+      const { enhancedPrompt, links } = createEnhancedPrompt(newUserInput, functionResult);
+      
+      const previousMessages = messages.slice(0, index);
+      const chatMessages = createChatMessages(
+        enhancedPrompt,
+        systemPrompt,
+        previousMessages
+      );
+
+      const response = await sendChatRequest(chatMessages);
+      const reader = response.body?.getReader();
+
+      if (!reader) {
+        throw new Error('No reader available');
       }
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: messageContent
-      }]);
-    }
-  } catch (err) {
-    console.error('Chat error:', err);
-    setError(err instanceof Error ? err.message : 'Failed to send message');
-  } finally {
-    setIsLoading(false);
-    setPartialResponse('');
-  }
-}, [messages, systemPrompt, parameters]);
 
-const regenerateResponse = useCallback(async (messageIndex: number) => {
-  try {
-    setIsLoading(true);
-    setError(null);
-    setPartialResponse('');
-    
-    const previousMessages = messages.slice(0, messageIndex);
-    const lastUserMessage = previousMessages
-      .slice()
-      .reverse()
-      .find(msg => msg.role === 'user');
+      const accumulatedResponse = await processStreamResponse(reader);
 
-    if (!lastUserMessage) {
-      throw new Error('No user message found to regenerate response');
-    }
-
-    const userContent = typeof lastUserMessage.content === 'string' 
-      ? lastUserMessage.content 
-      : lastUserMessage.content.text;
-
-    setMessages(prev => prev.slice(0, messageIndex));
-
-    const functionResult = await functionCalling(userContent);
-    if (functionResult?.type === 'image_url') {
-      const imgResult = functionResult as any;
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: {
-          text: '',
-          images: imgResult.images
+      if (accumulatedResponse) {
+        const messageContent: MessageContent = {
+          text: accumulatedResponse
         }
-      }]);
-      return;
-    }
-
-    const { enhancedPrompt, links } = createEnhancedPrompt(userContent, functionResult);
-
-    const chatMessages = createChatMessages(
-      enhancedPrompt,
-      systemPrompt,
-      previousMessages.slice(0, -1)
-    );
-
-    const response = await sendChatRequest(chatMessages);
-    const reader = response.body?.getReader();
-
-    if (!reader) {
-      throw new Error('No reader available');
-    }
-
-    const accumulatedResponse = await processStreamResponse(reader);
-
-    if (accumulatedResponse) {
-      const messageContent: MessageContent = {
-        text: accumulatedResponse
+        if (links && links.length > 0) {
+          messageContent.links = links;
+        }
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: messageContent
+        }]);
       }
-      if (links && links.length > 0) {
-        messageContent.links = links;
-      }
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: messageContent
-      }]);
+    } catch (err) {
+      console.error('Chat error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to send message');
+    } finally {
+      setIsLoading(false);
+      setPartialResponse('');
     }
-  } catch (err) {
-    console.error('Chat error:', err);
-    setError(err instanceof Error ? err.message : 'Failed to send message');
-  } finally {
-    setIsLoading(false);
-    setPartialResponse('');
-  }
-}, [messages, systemPrompt, parameters]);
+  }, [messages, systemPrompt, parameters]);
 
+  const regenerateResponse = useCallback(async (messageIndex: number) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      setPartialResponse('');
+      
+      const previousMessages = messages.slice(0, messageIndex);
+      const lastUserMessage = previousMessages
+        .slice()
+        .reverse()
+        .find(msg => msg.role === 'user');
+  
+      if (!lastUserMessage) {
+        throw new Error('No user message found to regenerate response');
+      }
+  
+      const userContent = typeof lastUserMessage.content === 'string' 
+        ? lastUserMessage.content 
+        : lastUserMessage.content.text;
+  
+      setMessages(prev => prev.slice(0, messageIndex));
+  
+      // Check if input is stringified image data
+      let isImageChat = false;
+      let imageData = '';
+      let imagePrompt = '';
+  
+      try {
+        const parsed = JSON.parse(userContent);
+        if (parsed.type === 'image') {
+          isImageChat = true;
+          imageData = parsed.image;
+          imagePrompt = parsed.prompt;
+        }
+      } catch {
+        isImageChat = userContent.includes('data:image');
+        if (isImageChat) {
+          imageData = userContent;
+          imagePrompt = "What's in this image?";
+        }
+      }
+  
+      if (isImageChat) {
+        const imageResponse = await processImageChat(imageData, imagePrompt);
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: {
+            text: imageResponse,
+          }
+        }]);
+        return;
+      }
+
+      const functionResult = await functionCalling(userContent);
+      if (functionResult?.type === 'image_url') {
+        const imgResult = functionResult as any;
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: {
+            text: '',
+            images: imgResult.images
+          }
+        }]);
+        return;
+      }
+
+      const { enhancedPrompt, links } = createEnhancedPrompt(userContent, functionResult);
+
+      const chatMessages = createChatMessages(
+        enhancedPrompt,
+        systemPrompt,
+        previousMessages.slice(0, -1)
+      );
+
+      const response = await sendChatRequest(chatMessages);
+      const reader = response.body?.getReader();
+
+      if (!reader) {
+        throw new Error('No reader available');
+      }
+
+      const accumulatedResponse = await processStreamResponse(reader);
+
+      if (accumulatedResponse) {
+        const messageContent: MessageContent = {
+          text: accumulatedResponse
+        }
+        if (links && links.length > 0) {
+          messageContent.links = links;
+        }
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: messageContent
+        }]);
+      }
+    } catch (err) {
+      console.error('Chat error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to send message');
+    } finally {
+      setIsLoading(false);
+      setPartialResponse('');
+    }
+  }, [messages, systemPrompt, parameters]);
+
+  
   return {
     messages,
     isLoading,

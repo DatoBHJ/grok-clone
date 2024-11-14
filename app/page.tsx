@@ -1,10 +1,23 @@
 'use client'
 
-import React, { useState } from 'react';
-import { Clock, Share, SendHorizontal, Image, ArrowLeft } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Share, SendHorizontal, Image, ArrowLeft, X } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Chat } from '@/components/Chat';
 import { useChat } from '@/hooks/useChat';
+
+const convertImageToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+      }
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
 
 const SuggestionCard = ({ 
   icon, 
@@ -91,6 +104,9 @@ const Header = ({ onBack }: { onBack: () => void }) => (
 export default function Home() {
   const [showChat, setShowChat] = useState(false);
   const [inputValue, setInputValue] = useState('');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const { 
     messages, 
     isLoading, 
@@ -101,11 +117,41 @@ export default function Home() {
     regenerateResponse,
     resetChat 
   } = useChat();
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const base64Image = await convertImageToBase64(file);
+      setSelectedImage(base64Image);
+    }
+  };
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const removeSelectedImage = () => {
+    setSelectedImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
   
   const handleStartChat = async () => {
-    if (inputValue.trim()) {
+    if (selectedImage || inputValue.trim()) {
       setShowChat(true);
-      await addMessage(inputValue.trim());
+      if (selectedImage) {
+        const imagePrompt = inputValue.trim() || "What's in this image?";
+        // Send both image and prompt
+        await addMessage(JSON.stringify({
+          type: 'image',
+          image: selectedImage,
+          prompt: imagePrompt
+        }));
+        setSelectedImage(null);
+      } else {
+        await addMessage(inputValue.trim());
+      }
       setInputValue('');
     }
   };
@@ -114,6 +160,7 @@ export default function Home() {
     setShowChat(false);
     resetChat();
     setInputValue('');
+    setSelectedImage(null);
   };
 
   const handleSuggestionClick = async (title: string) => {
@@ -153,20 +200,50 @@ export default function Home() {
         <div className="mb-16 mt-8">
           <h1 className="text-4xl font-medium text-center mb-8 text-black dark:text-white">Grok</h1>
           <div className="relative">
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder={selectedImage ? "Ask about this image" : "Ask anything"}
+            className="w-full p-4 pl-14 pr-12 bg-input rounded-full text-black dark:text-white placeholder-inputtext focus:outline-none"
+            onKeyPress={(e) => e.key === 'Enter' && handleStartChat()}
+          />
             <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Ask anything"
-              className="w-full p-4 pl-12 pr-12 bg-input rounded-full text-black dark:text-white placeholder-inputtext focus:outline-none "
-              onKeyPress={(e) => e.key === 'Enter' && handleStartChat()}
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleImageUpload}
             />
-            <Image className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-foreground/40 dark:text-white" />
+            <button 
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              onClick={handleImageClick}
+            >
+              <Image className="w-5 h-5 text-foreground/40 dark:text-white" />
+            </button>
+
             <SendHorizontal 
               className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-foreground cursor-pointer"
               onClick={handleStartChat}
             />
           </div>
+          
+          {selectedImage && (
+            <div className="mt-4 relative inline-block">
+              <img 
+                src={selectedImage} 
+                alt="Selected" 
+                className="max-h-40 rounded-lg"
+              />
+              <button
+                onClick={removeSelectedImage}
+                className="absolute top-2 right-2 p-1 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+              >
+                <X className="w-4 h-4 text-white" />
+              </button>
+            </div>
+          )}
+
           <p className="text-center dark:text-zinc-700 text-slate-300 text-md font-medium mt-2">
             Grok can make mistakes. Verify its outputs.
           </p>
@@ -196,7 +273,7 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-4">
-        <ImageCard 
+          <ImageCard 
             title="An underwater library"
             imageSrc="/underwater.jpeg"
             onClick={handleImageCardClick}

@@ -169,7 +169,11 @@ async function searchNews(query: string) {
         'X-API-KEY': process.env.SERPER_API_KEY!,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ q: query })
+      body: JSON.stringify({ 
+        num: config.numberOfPagesToScan,
+        q: query,
+        tbs: 'qdr:w',
+      })
     });
 
     if (!response.ok) {
@@ -201,7 +205,11 @@ async function searchPlaces(query: string, location: string) {
         'X-API-KEY': process.env.SERPER_API_KEY!,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ q: query, location: location }),
+      body: JSON.stringify({ 
+        num: config.numberOfPagesToScan,
+        q: query, 
+        location: location 
+      }),
     })
     const data = await response.json()
     return {
@@ -234,7 +242,10 @@ async function goShopping(query: string) {
         'X-API-KEY': process.env.SERPER_API_KEY!,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ q: query })
+      body: JSON.stringify({ 
+        num: config.numberOfPagesToScan,
+        q: query 
+      })
     })
 
     if (!response.ok) {
@@ -254,7 +265,6 @@ async function goShopping(query: string) {
 
 async function getTickers(ticker: string) {
   try {
-    // Then fetch related news about the company
     const company = ticker.split(':')[1]; // Extract company symbol (e.g., 'NVDA' from 'NASDAQ:NVDA')
     const newsResponse = await fetch('https://google.serper.dev/news', {
       method: 'POST',
@@ -263,7 +273,7 @@ async function getTickers(ticker: string) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ 
-        num: 10,
+        num: config.numberOfPagesToScan,
         q: `${company} stock market news`,
         tbs: 'qdr:w',
       })
@@ -275,7 +285,6 @@ async function getTickers(ticker: string) {
 
     const newsData = await newsResponse.json();
     
-    // Combine ticker and news information
     return {
       type: 'stock_info' as const,
       data: ticker,
@@ -299,7 +308,6 @@ async function searchTweets(query: string) {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const dateString = sevenDaysAgo.toISOString().split('T')[0];
     
-    // 직접 트윗 URL 패턴으로 검색
     const enhancedQuery = `${query} inurl:status twitter.com OR x.com after:${dateString}`;
     
     const response = await fetch('https://google.serper.dev/search', {
@@ -310,7 +318,7 @@ async function searchTweets(query: string) {
       },
       body: JSON.stringify({ 
         q: enhancedQuery,
-        num: 10,
+        num: config.numberOfTweetToScan,
         type: 'search',
         tbs: 'qdr:w',
         // gl: 'us'
@@ -434,7 +442,7 @@ export async function POST(req: Request) {
       console.error(`Function execution error:`, error)
       return Response.json(
         { type: null, data: null, error: 'Function execution failed' },
-        { status: 200 } // Changed to 200 to avoid triggering error handling
+        { status: 200 } 
       )
     }
 
@@ -442,7 +450,7 @@ export async function POST(req: Request) {
     console.error('Function calling error:', error)
     return Response.json(
       { type: null, data: null, error: 'Function calling failed' },
-      { status: 200 } // Changed to 200 to avoid triggering error handling
+      { status: 200 } 
     )
   }
 }

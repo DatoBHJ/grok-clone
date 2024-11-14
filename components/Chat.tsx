@@ -1,10 +1,9 @@
 // Chat.tsx
 import React, { useCallback, useState } from 'react';
-import { Message,MessageContent } from '@/types/chat';
+import { Message, MessageContent } from '@/types/chat';
 import { ChatInput } from './ChatInput';
 import { ChatMessage } from './ChatMessage';
 import { Pencil, X } from 'lucide-react';
-
 
 interface ChatProps {
   messages: Message[];
@@ -32,6 +31,17 @@ export function Chat({
     (message) => message.role === 'assistant' || message.role === 'user'
   );
 
+  const isImageString = (str: string) => {
+    try {
+      const parsed = JSON.parse(str);
+      if (parsed.type === 'image' && parsed.image?.startsWith('data:image')) {
+        return true;
+      }
+    } catch {
+      return str.startsWith('data:image') || /\.(jpg|jpeg|png|gif|svg)$/i.test(str);
+    }
+    return false;
+  };
 
   const handleStartEdit = (index: number, content: string) => {
     setEditingIndex(index);
@@ -52,6 +62,24 @@ export function Chat({
       await addMessage(content);
     }
   }, [editingIndex, editMessage, addMessage]);
+
+  const getEditingMessage = () => {
+    if (editingIndex === null) return null;
+    const content = messages[editingIndex].content;
+    
+    if (typeof content === 'string') {
+      try {
+        const parsed = JSON.parse(content);
+        if (parsed.type === 'image') {
+          return { text: parsed.prompt, image: parsed.image };
+        }
+      } catch {
+        return content;
+      }
+    }
+    
+    return typeof content === 'string' ? content : content.text;
+  };
 
   return (
     <>
@@ -105,9 +133,34 @@ export function Chat({
                     </button>
                   </div>
                   <div className="px-4 py-1 text-sm text-gray-500 dark:text-zinc-400">
-                    {typeof messages[editingIndex].content === 'string' 
-                      ? messages[editingIndex].content 
-                      : (messages[editingIndex].content as { text: string }).text}
+                    {(() => {
+                      const currentMessage = getEditingMessage();
+                      if (typeof currentMessage === 'string') {
+                        return isImageString(currentMessage) ? (
+                          <div className="relative inline-block">
+                            <img 
+                              src={currentMessage} 
+                              alt="Editing" 
+                              className="max-h-32 rounded-lg"
+                            />
+                          </div>
+                        ) : currentMessage;
+                      } else if (currentMessage && typeof currentMessage === 'object' && 'image' in currentMessage) {
+                        return (
+                          <div>
+                            <div className="relative inline-block">
+                              <img 
+                                src={currentMessage.image} 
+                                alt="Editing" 
+                                className="max-h-32 rounded-lg"
+                              />
+                            </div>
+                            <div className="mt-2">{currentMessage.text}</div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 </div>
               </div>

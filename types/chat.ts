@@ -32,29 +32,6 @@ export interface ChatRequestMessage {
   content: string;
 }
 
-export interface ChatResponse {
-  id: string
-  object: string
-  created: number
-  model: string
-  choices: {
-    index: number
-    delta?: {
-      content?: string
-      role?: string
-    }
-    message?: {
-      role: string
-      content: string
-    }
-    finish_reason: string
-  }[]
-  usage?: {
-    prompt_tokens: number
-    completion_tokens: number
-    total_tokens: number
-  }
-}
 // 채팅 설정을 위한 타입 정의
 export interface ChatConfig {
   // 기본 시스템 프롬프트
