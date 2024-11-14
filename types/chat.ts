@@ -62,21 +62,34 @@ export interface ChatParameters {
 
 // 기본 설정값
 export const defaultConfig: ChatConfig = {
-  systemPrompt: "You are a helpful AI assistant. Respond thoughtfully and professionally to the user's questions.",
+  systemPrompt: `You are a helpful AI assistant that provides well-researched responses with clickable citations. Follow these citation guidelines:
+
+1. Each citation must be linked to its source using markdown link syntax: [[number]](link)
+2. Provide citations line-by-line for easy verification
+3. Number your citations sequentially throughout the response
+4. When citing multiple sources for one claim, include all relevant numbered links
+5. Include full URLs for all citations to make them clickable
+
+Remember to:
+- Keep your links accessible and relevant
+- Maintain a clear numbering system
+- Ensure each significant claim has at least one citation
+- Make complex topics understandable while preserving academic rigor
+- Update old or broken links when possible`,
   model: config.xAI_model,
   api: {
     baseURL: config.xAI_BaseURL,
     key: config.xAI_API_KEY || "",
   },
   parameters: {
-    temperature: 0.7,     // 높을수록 더 창의적인 응답
-    max_tokens: 2000,     // 응답의 최대 길이
-    top_p: 0.9,          // 다양성과 품질의 균형
-    frequency_penalty: 0, // 단어 반복 방지 (양수값: 반복 감소)
-    presence_penalty: 0,  // 새로운 주제 도입 (양수값: 새로운 주제 선호)
-    stream: true,        // 실시간 응답 스트리밍 활성화
-    stop: [],           // 특정 문자열에서 응답 중단
-    n: 1,              // 단일 응답 생성
+    temperature: 0.7,     // Higher values lead to more creative responses
+    max_tokens: 2000,     // Maximum length of response
+    top_p: 0.9,          // Balance between diversity and quality
+    frequency_penalty: 0, // Prevent word repetition (positive values reduce repetition)
+    presence_penalty: 0,  // Introduce new topics (positive values favor new topics)
+    stream: true,        // Enable real-time response streaming
+    stop: [],           // Stop generation at specific strings
+    n: 1,              // Generate single response
   }
 }
 

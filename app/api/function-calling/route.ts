@@ -9,7 +9,6 @@ const client = new OpenAI({
   baseURL: config.BaseURL,
 })
 
-type FunctionName = "getTickers" | "searchPlaces" | "goShopping" | "searchNews" | "generateImage" | "searchTweets";
 
 const functions: ChatCompletionTool[] = [
   {
@@ -70,14 +69,14 @@ const functions: ChatCompletionTool[] = [
   {
     type: "function",
     function: {
-      name: "searchNews",
-      description: "Search for recent news articles using the given query",
+      name: "searchNewsAndTweets",
+      description: "Search for both recent news articles and tweets using the given query",
       parameters: {
         type: "object",
         properties: {
           query: {
             type: "string",
-            description: "The search query for news articles",
+            description: "The search query for news articles and tweets",
           },
         },
         required: ["query"],
@@ -98,23 +97,6 @@ const functions: ChatCompletionTool[] = [
           },
         },
         required: ["prompt"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "searchTweets",
-      description: "Search for recent tweets (within last 7 days) when user wants to find Twitter/X posts",
-      parameters: {
-        type: "object",
-        properties: {
-          query: {
-            type: "string",
-            description: "The search query for tweets",
-          },
-        },
-        required: ["query"],
       },
     },
   },
@@ -161,9 +143,10 @@ async function generateImage(prompt: string) {
   }
 }
 
-async function searchNews(query: string) {
+async function searchNewsAndTweets(query: string) {
   try {
-    const response = await fetch('https://google.serper.dev/news', {
+    // Search for news
+    const newsResponse = await fetch('https://google.serper.dev/news', {
       method: 'POST',
       headers: {
         'X-API-KEY': process.env.SERPER_API_KEY!,
@@ -176,23 +159,51 @@ async function searchNews(query: string) {
       })
     });
 
-    if (!response.ok) {
-      throw new Error(`News search failed with status: ${response.status}`);
+    // Search for tweets
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const dateString = sevenDaysAgo.toISOString().split('T')[0];
+    
+    const tweetQuery = `${query} inurl:status twitter.com OR x.com after:${dateString}`;
+    
+    const tweetsResponse = await fetch('https://google.serper.dev/search', {
+      method: 'POST',
+      headers: {
+        'X-API-KEY': process.env.SERPER_API_KEY!,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 
+        q: tweetQuery,
+        num: config.numberOfTweetToScan,
+        type: 'search',
+        tbs: 'qdr:w',
+      })
+    });
+
+    if (!newsResponse.ok || !tweetsResponse.ok) {
+      throw new Error('Search failed');
     }
 
-    const data = await response.json();
+    const newsData = await newsResponse.json();
+    const tweetsData = await tweetsResponse.json();
+
     return {
-      type: 'news_search' as const,
-      news: data.news.map((article: any) => ({
+      type: 'news_and_tweets' as const,
+      news: newsData.news.map((article: any) => ({
         title: article.title,
         link: article.link,
         snippet: article.snippet,
         date: article.date,
         source: article.source
+      })),
+      tweets: tweetsData.organic.map((result: any) => ({
+        title: result.title,
+        link: result.link,
+        snippet: result.snippet,
       }))
     };
   } catch (error) {
-    console.error('Error searching news:', error);
+    console.error('Error searching news and tweets:', error);
     throw error;
   }
 }
@@ -302,59 +313,14 @@ async function getTickers(ticker: string) {
   }
 }
 
-async function searchTweets(query: string) {
-  try {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const dateString = sevenDaysAgo.toISOString().split('T')[0];
-    
-    const enhancedQuery = `${query} inurl:status twitter.com OR x.com after:${dateString}`;
-    
-    const response = await fetch('https://google.serper.dev/search', {
-      method: 'POST',
-      headers: {
-        'X-API-KEY': process.env.SERPER_API_KEY!,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ 
-        q: enhancedQuery,
-        num: config.numberOfTweetToScan,
-        type: 'search',
-        tbs: 'qdr:w',
-        // gl: 'us'
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Tweet search failed with status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log('Tweet search data:', data);
-    
-    const tweets = data.organic.map((result: any) => ({
-      title: result.title,
-      link: result.link,
-      snippet: result.snippet,
-    }));
-
-    return {
-      type: 'tweets' as const,
-      tweets
-    };
-  } catch (error) {
-    console.error('Error searching tweets:', error);
-    throw error;
-  }
-}
+type FunctionName = "getTickers" | "searchPlaces" | "goShopping" | "searchNewsAndTweets" | "generateImage";
 
 const availableFunctions: Record<FunctionName, Function> = {
   getTickers,
   searchPlaces,
   goShopping,
-  searchNews,
+  searchNewsAndTweets,
   generateImage,
-  searchTweets
 };
 
 
@@ -380,15 +346,14 @@ export async function POST(req: Request) {
           You will be given a query and a list of functions. 
           Your task is to call the appropriate function based on the query and return the result in JSON format. 
           ONLY CALL A FUNCTION IF YOU ARE HIGHLY CONFIDENT IT WILL BE USED
-    
+        
           - For stock-related queries, use getTickers to get both stock symbol and recent news
-          - Only call searchNews when user asks for general news or current events
+          - Call searchNewsAndTweets when user asks about news, current events, or wants to find recent posts/updates from Twitter/X (it will search both news articles and social media posts)
           - Only call generateImage when user wants to create or generate images
           - Only call searchPlaces when user needs location information
           - Only call goShopping when user wants to buy or find products
-          - Only call searchTweets when user wants to find recent posts/updates from Twitter/X
-    
-          Remember, call the function when you are ABSOLUTELY SURE it will be used.` 
+        
+          Remember, call the function when you are ABSOLUTELY SURE it will be used.`
         },
         {
           role: "user",
@@ -424,13 +389,10 @@ export async function POST(req: Request) {
         case 'goShopping':
           result = await functionToCall(args.query)
           break
-        case 'searchNews':
-          result = await functionToCall(args.query)
-          break
         case 'generateImage':
           result = await functionToCall(args.prompt)
           break
-        case 'searchTweets':
+        case 'searchNewsAndTweets':
           result = await functionToCall(args.query)
           break
         default:

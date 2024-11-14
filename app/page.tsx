@@ -114,7 +114,7 @@ const Header = ({ onBack }: { onBack: () => void }) => (
           <div className="flex items-center gap-2">
             <h1 className="text-base font-semibold text-black dark:text-white">Groc 2</h1>
           </div>
-          <span className="px-2 py-0.5 text-xs bg-blue-800/50 text-sky-500 rounded-md font-semibold">beta</span>
+          <span className="px-2 py-0.5 text-xs bg-blue-800/50 text-blue-500 rounded-md font-semibold">beta</span>
         </div>
         
         <button className="p-2 hover:bg-card rounded-lg transition-colors">

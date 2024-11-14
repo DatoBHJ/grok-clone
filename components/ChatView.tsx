@@ -39,8 +39,18 @@ const PROSE_STYLES = {
     img: "w-full h-full object-cover rounded-xl",
     overlay: "absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center",
     button: "text-white text-sm bg-black/50 px-4 py-2 rounded-full hover:bg-black/70 transition-colors"
-  }
+  },
+  links: {
+    twitter: "text-blue-500 hover:underline dark:text-blue-400", // Twitter blue color
+    regular: "text-red-600 hover:underline dark:text-red-400", // Regular link color
+    citation: "text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 cursor-pointer",
+  },
 } as const;
+
+const isTwitterLink = (url: string | undefined): boolean => {
+  if (!url) return false;
+  return url.includes('twitter.com') || url.includes('x.com');
+};
 
 const ImageGrid: React.FC<{ images: Array<{ url: string }> }> = ({ images }) => {
   const handleImageClick = (imageUrl: string) => {
@@ -114,6 +124,42 @@ const ChatView: React.FC<ChatViewProps> = ({ content }) => {
         {children}
       </h3>
     ),
+    a: ({ href, children }) => {
+      // Check if this is a citation link (matches [[number]](link) pattern)
+      const isCitation = typeof children === 'string' && /^\[\d+\]$/.test(children);
+      
+      if (isCitation) {
+        return (
+          <a 
+            href={href} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className={PROSE_STYLES.links.citation}
+          >
+            {children}
+          </a>
+        );
+      }
+      
+      // Determine link style based on URL
+      const linkClassName = isTwitterLink(href) 
+        ? PROSE_STYLES.links.twitter 
+        : PROSE_STYLES.links.regular;
+      
+      return (
+        <a 
+          href={href} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className={linkClassName}
+        >
+          {children}
+          {isTwitterLink(href) && ' 𝕏'} {/* Optional: Add X icon for Twitter links */}
+        </a>
+      );
+    },
+
+    // Enhance the paragraph component to better handle citations
     p: ({ children }) => {
       if (typeof children === 'string' && children.match(/^={3,}$/)) {
         return <hr className="border-t border-gray-300 dark:border-gray-700 mt-2 mb-4 px-2" />;

@@ -51,7 +51,7 @@ export function useChat(options: UseChatOptions = {}) {
           }
         }
       }
-
+      console.log('accumulatedContent:', accumulatedContent)
       return accumulatedContent
     } catch (e) {
       console.error('Stream processing error:', e)
@@ -84,18 +84,32 @@ export function useChat(options: UseChatOptions = {}) {
             domain: new URL(item.link).hostname
           }))
           break
-        case 'news_search':
-          enhancedPrompt += `\n\nRecent news context:\n${functionResult.news
-            .slice(0, config.numberOfPagesToScan)
-            .map((item: any) => `- ${item.title}: ${item.snippet} (${item.link})`)
-            .join('\n')}`
-          links = functionResult.news.slice(0, config.numberOfPagesToScan).map((item: any) => ({
-            url: item.link,
-            title: item.title,
-            description: item.snippet,
-            domain: new URL(item.link).hostname
-          }))
-          break
+          case 'news_and_tweets':
+            enhancedPrompt += `\n\nRecent news context:\n${functionResult.news
+              .slice(0, config.numberOfPagesToScan)
+              .map((item: any) => `- ${item.title}: ${item.snippet} (${item.link})`)
+              .join('\n')}`;
+            
+            enhancedPrompt += `\n\nRecent tweets:\n${functionResult.tweets
+              .slice(0, config.numberOfTweetToScan)
+              .map((tweet: any) => `- ${tweet.title}\n  ${tweet.snippet} (${tweet.link})`)
+              .join('\n')}`;
+            
+            links = [
+              ...functionResult.news.slice(0, config.numberOfPagesToScan).map((item: any) => ({
+                url: item.link,
+                title: item.title,
+                description: item.snippet,
+                domain: new URL(item.link).hostname
+              })),
+              ...functionResult.tweets.slice(0, config.numberOfTweetToScan).map((tweet: any) => ({
+                url: tweet.link,
+                title: tweet.title,
+                description: tweet.snippet,
+                domain: 'twitter.com'
+              }))
+            ];
+            break;
         case 'places':
           enhancedPrompt += `\n\nPlaces context:\n${functionResult.places
             .slice(0, config.numberOfPagesToScan)
@@ -119,18 +133,6 @@ export function useChat(options: UseChatOptions = {}) {
             description: `${item.price}`,
             image: item.image,
             domain: new URL(item.link).hostname
-          }))
-          break
-        case 'tweets':
-          enhancedPrompt += `\n\nRecent tweets:\n${functionResult.tweets
-            .slice(0, config.numberOfTweetToScan)
-            .map((tweet: any) => `- ${tweet.title}\n  ${tweet.snippet} (${tweet.link})`)
-            .join('\n')}`
-          links = functionResult.tweets.slice(0, config.numberOfTweetToScan).map((tweet: any) => ({
-            url: tweet.link,
-            title: tweet.title,
-            description: tweet.snippet,
-            domain: 'twitter.com'
           }))
           break
       }
@@ -194,20 +196,6 @@ export function useChat(options: UseChatOptions = {}) {
       throw err;
     }
   };
-
-    
-
-  const isImageContent = (content: string | MessageContent): boolean => {
-    if (typeof content === 'string') {
-      try {
-        const parsed = JSON.parse(content);
-        return parsed.type === 'image' && parsed.image.startsWith('data:image');
-      } catch {
-        return content.startsWith('data:image') || content.startsWith('http');
-      }
-    }
-    return false;
-  };
   
   const addMessage = useCallback(async (userInput: string) => {
     const userMessage: Message = {
@@ -268,7 +256,7 @@ export function useChat(options: UseChatOptions = {}) {
       }
       
       const { enhancedPrompt, links } = createEnhancedPrompt(userInput, functionResult);
-      console.log('enhancedPrompt:', enhancedPrompt);
+      // console.log('enhancedPrompt:', enhancedPrompt);
       const chatMessages = createChatMessages(enhancedPrompt, systemPrompt, messages);
       
       const response = await sendChatRequest(chatMessages);
