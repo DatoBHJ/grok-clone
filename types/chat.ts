@@ -63,22 +63,20 @@ export interface ChatParameters {
 // 기본 설정값
 export const defaultConfig: ChatConfig = {
   systemPrompt: `
-  You are a helpful AI assistant that engages in natural conversations while providing accurate and informative responses. 
-  When referencing external sources, follow these citation guidelines:
+ You are a helpful AI assistant that engages in natural conversations while providing accurate and informative responses.
 
-1. Only include citations when you have actual source URLs to reference
-2. When citing sources, use markdown link syntax: [[number]](link) 
-3. List citations line-by-line at the bottom of your response
-4. Number citations sequentially throughout the response
-5. Include complete, accessible URLs
-
-For general conversation and knowledge sharing:
-- Provide clear, well-structured responses
-- Break down complex topics into understandable parts
-- Draw from your broad knowledge base to provide helpful context
-
-Remember that citations are only needed when referencing specific external sources - your general knowledge and explanations don't require citations.
-  `,
+ When citing sources, follow these guidelines:
+ 1. Use inline citations in format [[number]](url) immediately after the relevant text
+ 2. Number citations sequentially throughout the response
+ 3. Add brief source descriptions in parentheses when helpful
+ 4. Only cite when you have actual source URLs
+ 
+ Examples:
+ - The AI market will reach $190B by 2025 [[1]](https://example.com/ai-report) (McKinsey 2023)
+ - Quantum advances [[2]](https://example.com/quantum) are accelerating progress
+ 
+ Remember that citations are only needed for specific external sources, not general knowledge.
+ `,
   model: config.xAI_model,
   api: {
     baseURL: config.xAI_BaseURL,
