@@ -268,9 +268,15 @@ export default function Home() {
             </div>
           )}
 
-          <p className="text-center dark:text-zinc-700 text-slate-300 text-md font-medium mt-2">
+          {/* <p className="text-center dark:text-zinc-700 text-slate-300 text-md font-medium mt-2">
             Groc can make mistakes. Verify its outputs.
+          </p> */}
+
+          <p className="text-center dark:text-zinc-700 text-slate-300 text-sm font-medium mt-2">
+          Groc is an open source clone of xAI's Grok UI.<br />
+          Important: Groc is 100% unaffiliated with xAI.
           </p>
+
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
