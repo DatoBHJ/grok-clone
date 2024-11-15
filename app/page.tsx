@@ -166,7 +166,7 @@ export default function Home() {
     if (selectedImage || inputValue.trim()) {
       setShowChat(true);
       if (selectedImage) {
-        const imagePrompt = inputValue.trim() || "What's in this image?";
+        const imagePrompt = inputValue.trim();
         // Send both image and prompt
         await addMessage(JSON.stringify({
           type: 'image',
@@ -274,7 +274,7 @@ export default function Home() {
           {/* <p className="text-center dark:text-zinc-700 text-slate-300 text-md font-medium mt-2">
             Groc can make mistakes. Verify its outputs.
           </p> */}
-          
+
           <p className="text-center dark:text-zinc-700 text-slate-300 text-sm font-medium mt-2">
           Groc is an open source clone of xAI's Grok UI.<br />
           Important: Groc is 100% unaffiliated with xAI.
