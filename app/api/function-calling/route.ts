@@ -14,8 +14,30 @@ const functions: ChatCompletionTool[] = [
   {
     type: "function",
     function: {
+      name: "searchNewsAndTweets",
+      description: "Search for both recent news articles and tweets using the given query and time range",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "The search query for news articles and tweets",
+          },
+          time: {
+            type: "string",
+            description: "Time range for search. Format: d (past day), d3 (past 3 days), w (past week), w2 (past 2 weeks), m (past month), m6 (past 6 months), y (past year)",
+            pattern: "^([dwmy]\\d*|\\d+[dwmy])$"
+          }
+        },
+        required: ["query"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "getTickers",
-      description: "Get a single market name and stock ticker if the user mentions a public company",
+      description: "Get a single market name and stock ticker if the user mentions a public company. Include time range for news search.",
       parameters: {
         type: "object",
         properties: {
@@ -23,6 +45,11 @@ const functions: ChatCompletionTool[] = [
             type: "string",
             description: "The stock ticker symbol and market name, example NYSE:K or NASDAQ:AAPL",
           },
+          time: {
+            type: "string",
+            description: "Time range for search. Format: d (past day), d3 (past 3 days), w (past week), w2 (past 2 weeks), m (past month), m6 (past 6 months), y (past year)",
+            pattern: "^([dwmy]\\d*|\\d+[dwmy])$"
+          }
         },
         required: ["ticker"],
       },
@@ -65,23 +92,6 @@ const functions: ChatCompletionTool[] = [
         required: ["query"],
       },
     }
-  },
-  {
-    type: "function",
-    function: {
-      name: "searchNewsAndTweets",
-      description: "Search for both recent news articles and tweets using the given query",
-      parameters: {
-        type: "object",
-        properties: {
-          query: {
-            type: "string",
-            description: "The search query for news articles and tweets",
-          },
-        },
-        required: ["query"],
-      },
-    },
   },
   {
     type: "function",
@@ -143,8 +153,11 @@ async function generateImage(prompt: string) {
   }
 }
 
-async function searchNewsAndTweets(query: string) {
+async function searchNewsAndTweets(query: string, time: string) {
   try {
+    const tbs = `qdr:${time}`; // Directly use the time parameter in Serper API format
+    console.log('Time range:', tbs);
+
     // Search for news
     const newsResponse = await fetch('https://google.serper.dev/news', {
       method: 'POST',
@@ -155,16 +168,12 @@ async function searchNewsAndTweets(query: string) {
       body: JSON.stringify({ 
         num: config.numberOfPagesToScan,
         q: query,
-        tbs: 'qdr:w',
+        tbs: tbs,
       })
     });
 
     // Search for tweets
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const dateString = sevenDaysAgo.toISOString().split('T')[0];
-    
-    const tweetQuery = `${query} inurl:status twitter.com OR x.com after:${dateString}`;
+    const tweetQuery = `${query} inurl:status twitter.com OR x.com`;
     
     const tweetsResponse = await fetch('https://google.serper.dev/search', {
       method: 'POST',
@@ -176,7 +185,7 @@ async function searchNewsAndTweets(query: string) {
         q: tweetQuery,
         num: config.numberOfTweetToScan,
         type: 'search',
-        tbs: 'qdr:w',
+        tbs: tbs,
       })
     });
 
@@ -200,6 +209,7 @@ async function searchNewsAndTweets(query: string) {
         title: result.title,
         link: result.link,
         snippet: result.snippet,
+        date: result.date
       }))
     };
   } catch (error) {
@@ -274,9 +284,12 @@ async function goShopping(query: string) {
   }
 }
 
-async function getTickers(ticker: string) {
+async function getTickers(ticker: string, time: string) {
   try {
-    const company = ticker.split(':')[1]; // Extract company symbol (e.g., 'NVDA' from 'NASDAQ:NVDA')
+    const company = ticker.split(':')[1];
+    const tbs = `qdr:${time}`; // Directly use the time parameter in Serper API format
+    console.log('Time range:', tbs);
+    // Search for news
     const newsResponse = await fetch('https://google.serper.dev/news', {
       method: 'POST',
       headers: {
@@ -286,15 +299,33 @@ async function getTickers(ticker: string) {
       body: JSON.stringify({ 
         num: config.numberOfPagesToScan,
         q: `${company} stock market news`,
-        tbs: 'qdr:w',
+        tbs: tbs,
       })
     });
 
-    if (!newsResponse.ok) {
-      throw new Error(`News search failed with status: ${newsResponse.status}`);
+    // Search for tweets
+    const tweetQuery = `${company} stock market OR earnings OR investor inurl:status twitter.com OR x.com`;
+    
+    const tweetsResponse = await fetch('https://google.serper.dev/search', {
+      method: 'POST',
+      headers: {
+        'X-API-KEY': process.env.SERPER_API_KEY!,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 
+        q: tweetQuery,
+        num: config.numberOfTweetToScan,
+        type: 'search',
+        tbs: tbs,
+      })
+    });
+
+    if (!newsResponse.ok || !tweetsResponse.ok) {
+      throw new Error('Search failed');
     }
 
     const newsData = await newsResponse.json();
+    const tweetsData = await tweetsResponse.json();
     
     return {
       type: 'stock_info' as const,
@@ -305,10 +336,16 @@ async function getTickers(ticker: string) {
         snippet: article.snippet,
         date: article.date,
         source: article.source
+      })),
+      tweets: tweetsData.organic.map((result: any) => ({
+        title: result.title,
+        link: result.link,
+        snippet: result.snippet,
+        date: result.date
       }))
     };
   } catch (error) {
-    console.error('Error fetching stock info and news:', error);
+    console.error('Error fetching stock info, news and tweets:', error);
     throw error;
   }
 }
@@ -323,7 +360,6 @@ const availableFunctions: Record<FunctionName, Function> = {
   generateImage,
 };
 
-
 export async function POST(req: Request) {
   try {
     const body = await req.json()
@@ -336,6 +372,9 @@ export async function POST(req: Request) {
       )
     }
 
+    // Add debug logging to see what's being sent to OpenAI
+    console.log('Sending message to OpenAI:', message)
+
     const response = await client.chat.completions.create({
       model: config.model,
       messages: [
@@ -345,15 +384,26 @@ export async function POST(req: Request) {
           You are a function calling agent. 
           You will be given a query and a list of functions. 
           Your task is to call the appropriate function based on the query and return the result in JSON format. 
-          ONLY CALL A FUNCTION IF YOU ARE HIGHLY CONFIDENT IT WILL BE USED
-        
-          - For stock-related queries, use getTickers to get both stock symbol and recent news
-          - Call searchNewsAndTweets when user asks about news, current events, or wants to find recent posts/updates from Twitter/X (it will search both news articles and social media posts)
-          - Only call generateImage when user wants to create or generate images
-          - Only call searchPlaces when user needs location information
-          - Only call goShopping when user wants to buy or find products
-        
-          Remember, call the function when you are ABSOLUTELY SURE it will be used.`
+          
+          For time parameters, strictly follow these formats:
+          - "today", "24 hours", "today's", "latest" -> time: "d"
+          - "last 3 days", "past 3 days", "3 days" -> time: "d3"
+          - "2 weeks", "last 2 weeks" -> time: "w2"
+          - "1 month", "past month" -> time: "m"
+          - "6 months" -> time: "m6"
+          - "past year", "last year" -> time: "y"
+          - If no time is specified -> time: "w"
+          
+          Example: For "Tell me today's headlines", you must return:
+          {
+            "name": "searchNewsAndTweets",
+            "arguments": {
+              "query": "headlines",
+              "time": "d"
+            }
+          }
+    
+          ONLY CALL A FUNCTION IF YOU ARE HIGHLY CONFIDENT IT WILL BE USED`
         },
         {
           role: "user",
@@ -366,7 +416,9 @@ export async function POST(req: Request) {
 
     const toolCalls = response.choices[0]?.message?.tool_calls
 
-    // If no tool calls, return a valid response with null type
+    // Debug logging
+    console.log('OpenAI response tool calls:', JSON.stringify(toolCalls, null, 2))
+
     if (!toolCalls || toolCalls.length === 0) {
       return Response.json({ type: null, data: null }, { status: 200 })
     }
@@ -377,11 +429,17 @@ export async function POST(req: Request) {
     
     try {
       const args = JSON.parse(functionCall.function.arguments)
+
+      // Debug logging
+      console.log('Parsed arguments:', args)
+      const timeRange = args.time
+      console.log('Using time range:', timeRange)
+
       let result
 
       switch (functionName) {
         case 'getTickers':
-          result = await functionToCall(args.ticker)
+          result = await functionToCall(args.ticker, timeRange)
           break
         case 'searchPlaces':
           result = await functionToCall(args.query, args.location)
@@ -393,7 +451,8 @@ export async function POST(req: Request) {
           result = await functionToCall(args.prompt)
           break
         case 'searchNewsAndTweets':
-          result = await functionToCall(args.query)
+
+          result = await functionToCall(args.query, timeRange)
           break
         default:
           return Response.json({ type: null, data: null }, { status: 200 })
