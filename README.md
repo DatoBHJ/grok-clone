@@ -6,6 +6,12 @@ This is an open source clone of xAI's Grok UI built with [Next.js](https://nextj
 
 🌐 Live Demo: [groc.lol](https://www.groc.lol)
 
+## 🖼️ Preview
+
+![Website Preview](https://github.com/DatoBHJ/wakethedead/blob/main/assets/preview.png?raw=true)
+
+[Try Wake The Dead Now →](https://www.groc.lol)
+
 ## Features
 
 - Chat interface similar to Grok
