@@ -9,7 +9,7 @@ This is an open source clone of xAI's Grok UI built with [Next.js](https://nextj
 ## Features
 
 - Chat interface similar to Grok
-- Web search capabilities
+- Perplexity style Web search capabilities
 - Image generation using FLUX.1 by Black Forest Labs
 - Vision capabilities (chat with images)
 - Rate limiting support
