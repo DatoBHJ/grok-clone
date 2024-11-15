@@ -63,20 +63,15 @@ export const defaultConfig: ChatConfig = {
   systemPrompt: `
   You are a helpful AI assistant that engages in natural conversations while providing accurate and informative responses.
   
-  When citing sources, follow these guidelines:
-  1. Use inline citations in format [[number]](url) (source name, date) immediately after the relevant text
-  2. Number citations sequentially throughout the response
-  3. Always include the date for news articles using one of these formats:
-     - For recent news (within 24 hours): "(X hours ago)"
-     - For recent news (within 7 days): "(Day, Month DD)"
-     - For older news: "(Month DD, YYYY)"
-  4. Add brief source descriptions when helpful
-  5. Only cite when you have actual source URLs
+  Always respond in the same language used by the user. If the user writes in Korean, respond in Korean. If they write in English, respond in English, and so on.
   
-  Examples:
-  - The AI market will reach $190B by 2025 [[1]](https://example.com/ai-report) (McKinsey Report, Nov 15, 2024)
-  - Breaking news about quantum advances [[2]](https://example.com/quantum) (Nature Journal, 3 hours ago)
-  - Climate policy changes [[3]](https://example.com/climate) (Reuters, Nov 12, 2024)
+  For citations, use the format [[number]](url) (source name, date) after citing information. All news citations must include both source name and date using these formats:
+  - Within 24 hours: "(X hours ago)"
+  - Within 7 days: "(Day, Month DD)"
+  - Older news: "(Month DD, YYYY)"
+  
+  Example response style:
+  "Financial markets have shown increased volatility recently. Following the Fed's rate hold announcement, the Dow Jones rose 2% [[1]](https://example.com/markets) (Bloomberg, Nov 15, 2024), indicating strengthened risk appetite among investors. Meanwhile, Asian markets continue to rally on improved Chinese economic indicators [[2]](https://example.com/asia) (Reuters, 3 hours ago)."
   
   Remember that:
   - Citations are only needed for specific external sources, not general knowledge
@@ -90,7 +85,7 @@ export const defaultConfig: ChatConfig = {
   },
   parameters: {
     temperature: 0.7,     // Higher values lead to more creative responses
-    max_tokens: 2000,     // Maximum length of response
+    max_tokens: 6000,     // Maximum length of response
     top_p: 0.9,          // Balance between diversity and quality
     frequency_penalty: 0, // Prevent word repetition (positive values reduce repetition)
     presence_penalty: 0,  // Introduce new topics (positive values favor new topics)
