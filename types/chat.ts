@@ -3,7 +3,6 @@
 
 import { config } from "@/app/config"
 
-
 export interface LinkPreviewType {
   url: string;
   title: string;

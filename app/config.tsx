@@ -12,7 +12,7 @@ export const config = {
     // textChunkSize: 800, 
     // textChunkOverlap: 200, 
     // useSemanticCache: true, 
-    // useRateLimiting: true, 
+    useRateLimiting: true, 
     // startIndexOfPagesToScan: 0,
     numberOfPagesToScan: 8,
     numberOfTweetToScan: 8,

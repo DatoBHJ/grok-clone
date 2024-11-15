@@ -4,6 +4,7 @@ import { Message, MessageContent } from '@/types/chat';
 import { ChatInput } from './ChatInput';
 import { ChatMessage } from './ChatMessage';
 import { Pencil, X } from 'lucide-react';
+import RateLimit from './RateLimit';
 
 interface ChatProps {
   messages: Message[];
@@ -13,6 +14,7 @@ interface ChatProps {
   editMessage: (index: number, content: string) => Promise<void>;
   regenerateResponse: (index: number) => Promise<void>;
   partialResponse: string;
+  rateLimitError: boolean;
 }
 
 export function Chat({ 
@@ -22,7 +24,8 @@ export function Chat({
   addMessage, 
   editMessage,
   regenerateResponse,
-  partialResponse 
+  partialResponse,
+  rateLimitError 
 }: ChatProps) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingContent, setEditingContent] = useState('');
@@ -83,6 +86,8 @@ export function Chat({
 
   return (
     <>
+          {rateLimitError && <RateLimit />}
+
       <div className="pb-32">
         {displayMessages.map((message, index) => (
           <ChatMessage
@@ -106,9 +111,10 @@ export function Chat({
             AI is thinking...
           </div>
         )}
-        {error && (
+        {error &&(
+          // error message: Rate limit exceeded. Try again later.
           <div className="py-4 text-center text-red-500">
-            {error}
+            {error}. Try again later.
           </div>
         )}
       </div>

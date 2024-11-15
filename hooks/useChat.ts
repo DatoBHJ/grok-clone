@@ -13,6 +13,7 @@ export function useChat(options: UseChatOptions = {}) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [partialResponse, setPartialResponse] = useState('')
+  const [rateLimitError, setRateLimitError] = useState<boolean>(false);
 
   const { 
     systemPrompt = defaultConfig.systemPrompt, 
@@ -208,6 +209,20 @@ export function useChat(options: UseChatOptions = {}) {
     setPartialResponse('');
   
     try {
+      const rateLimitResponse = await fetch('/api/rate-limit', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+  
+      if (!rateLimitResponse.ok) {
+        if (rateLimitResponse.status === 429) {
+          setRateLimitError(true);
+          throw new Error('Rate limit exceeded');
+        }
+        throw new Error(`Rate limit check failed: ${rateLimitResponse.statusText}`);
+      }
       // Check if input is stringified image data
       let isImageChat = false;
       let imageData = '';
@@ -280,7 +295,7 @@ export function useChat(options: UseChatOptions = {}) {
         }]);
       }
     } catch (err) {
-      console.error('Chat error:', err);
+      // console.error('Chat error:', err);
       setError(err instanceof Error ? err.message : 'Failed to send message');
     } finally {
       setIsLoading(false);
@@ -288,31 +303,44 @@ export function useChat(options: UseChatOptions = {}) {
     }
   }, [messages, systemPrompt, parameters]);
 
-async function sendChatRequest(chatMessages: ChatRequestMessage[]) {
-  const response = await fetch('/api/chat', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      messages: chatMessages,
-      parameters: {
-        ...defaultConfig.parameters,
-        ...parameters
-      }
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.status}`);
+  async function sendChatRequest(chatMessages: ChatRequestMessage[]) {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messages: chatMessages,
+        parameters: {
+          ...defaultConfig.parameters,
+          ...parameters
+        }
+      })
+    });
+  
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+  
+    return response;
   }
-
-  return response;
-}
 
 const editMessage = useCallback(async (index: number, newUserInput: string) => {
   try {
+    const rateLimitResponse = await fetch('/api/rate-limit', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
 
+    if (!rateLimitResponse.ok) {
+      if (rateLimitResponse.status === 429) {
+        setRateLimitError(true);
+        throw new Error('Rate limit exceeded');
+      }
+      throw new Error(`Rate limit check failed: ${rateLimitResponse.statusText}`);
+    }
     setIsLoading(true);
     setError(null);
     setPartialResponse('');
@@ -401,7 +429,7 @@ const editMessage = useCallback(async (index: number, newUserInput: string) => {
         }]);
       }
     } catch (err) {
-      console.error('Chat error:', err);
+      // console.error('Chat error:', err);
       setError(err instanceof Error ? err.message : 'Failed to send message');
     } finally {
       setIsLoading(false);
@@ -411,6 +439,20 @@ const editMessage = useCallback(async (index: number, newUserInput: string) => {
 
   const regenerateResponse = useCallback(async (messageIndex: number) => {
     try {
+      const rateLimitResponse = await fetch('/api/rate-limit', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+  
+      if (!rateLimitResponse.ok) {
+        if (rateLimitResponse.status === 429) {
+          setRateLimitError(true);
+          throw new Error('Rate limit exceeded');
+        }
+        throw new Error(`Rate limit check failed: ${rateLimitResponse.statusText}`);
+      }
       setIsLoading(true);
       setError(null);
       setPartialResponse('');
@@ -505,7 +547,7 @@ const editMessage = useCallback(async (index: number, newUserInput: string) => {
         }]);
       }
     } catch (err) {
-      console.error('Chat error:', err);
+      // console.error('Chat error:', err);
       setError(err instanceof Error ? err.message : 'Failed to send message');
     } finally {
       setIsLoading(false);
@@ -522,6 +564,7 @@ const editMessage = useCallback(async (index: number, newUserInput: string) => {
     editMessage,
     regenerateResponse,
     partialResponse,
-    resetChat
+    resetChat,
+    rateLimitError
   }
 }

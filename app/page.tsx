@@ -5,6 +5,7 @@ import { Share, SendHorizontal, Image, ArrowLeft, X } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Chat } from '@/components/Chat';
 import { useChat } from '@/hooks/useChat';
+
 import {
   Tooltip,
   TooltipProvider,
@@ -138,7 +139,8 @@ export default function Home() {
     editMessage, 
     partialResponse, 
     regenerateResponse,
-    resetChat 
+    resetChat,
+    rateLimitError 
   } = useChat();
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -211,6 +213,7 @@ export default function Home() {
             editMessage={editMessage} 
             regenerateResponse={regenerateResponse}
             partialResponse={partialResponse}
+            rateLimitError={rateLimitError}
           />
         </div>
       </div>
