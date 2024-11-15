@@ -5,8 +5,8 @@ import { type ChatCompletionTool } from 'openai/resources/chat/completions'
 import { fal } from "@fal-ai/client";
 
 const client = new OpenAI({
-  apiKey: config.API_KEY,
-  baseURL: config.BaseURL,
+  apiKey: config.fcAPI_KEY,
+  baseURL: config.fcBaseURL,
 })
 
 
@@ -376,7 +376,7 @@ export async function POST(req: Request) {
     console.log('Sending message to OpenAI:', message)
 
     const response = await client.chat.completions.create({
-      model: config.model,
+      model: config.fcModel,
       messages: [
         { 
           role: "system", 

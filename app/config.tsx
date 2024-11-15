@@ -1,12 +1,13 @@
+//app/config.tsx
 export const config = {
     // useOllamaEmbeddings: false,
-    BaseURL: 'https://api.groq.com/openai/v1', 
-    API_KEY: process.env.GROQ_API_KEY,
-    model: 'llama3-8b-8192',
+    BaseURL: "https://api.x.ai/v1",
+    API_KEY: process.env.XAI_API_KEY,
+    Model: 'grok-beta',
 
-    xAI_BaseURL: "https://api.x.ai/v1",
-    xAI_API_KEY: process.env.XAI_API_KEY,
-    xAI_model: 'grok-beta',
+    fcBaseURL: 'https://api.groq.com/openai/v1',
+    fcAPI_KEY: process.env.GROQ_API_KEY,
+    fcModel: 'llama3-8b-8192',
     
     // embeddingsModel: 'text-embedding-3-small',
     // textChunkSize: 800, 

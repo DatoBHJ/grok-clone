@@ -84,10 +84,10 @@ export const defaultConfig: ChatConfig = {
   - Every news citation must include both the source name and date
   - Time-sensitive information should clearly indicate when it was reported
   `,
-  model: config.xAI_model,
+  model: config.Model,
   api: {
-    baseURL: config.xAI_BaseURL,
-    key: config.xAI_API_KEY || "",
+    baseURL: config.BaseURL,
+    key: config.API_KEY || "",
   },
   parameters: {
     temperature: 0.7,     // Higher values lead to more creative responses
