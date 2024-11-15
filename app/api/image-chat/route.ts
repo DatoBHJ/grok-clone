@@ -3,42 +3,12 @@
 import { NextResponse } from 'next/server';
 import { Groq } from 'groq-sdk';
 
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
-import { config } from '../../config';
-import { headers } from 'next/headers'
-
-// Create a new ratelimiter
-let ratelimit: Ratelimit;
-if (config.useRateLimiting) {
-  ratelimit = new Ratelimit({
-    redis: Redis.fromEnv(),
-    limiter: Ratelimit.slidingWindow(1, "10 m") 
-  });
-}
-
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
 });
 
 export async function POST(req: Request) {
   try {
-    const identifier = (await headers()).get('x-forwarded-for') || 
-    (await headers()).get('x-real-ip') || 
-    (await headers()).get('cf-connecting-ip') || 
-    (await headers()).get('client-ip') || "";
-
-    const { success, limit, reset, remaining } = await ratelimit.limit(identifier)
-
-    if (!success) {
-      return NextResponse.json(
-      { error: 'Rate limit exceeded', limit, reset, remaining },
-      { status: 429 }
-      );
-    }
-    else {
-      console.log("Rate limit: ", limit, remaining);
-    }
     
     const { image, prompt = "What's in this image?" } = await req.json();
 
@@ -67,7 +37,6 @@ export async function POST(req: Request) {
       stream: true
     });
 
-    // Transform stream to readable stream
     const stream = new ReadableStream({
       async start(controller) {
         try {

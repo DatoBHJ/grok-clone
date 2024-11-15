@@ -167,7 +167,6 @@ export default function Home() {
       setShowChat(true);
       if (selectedImage) {
         const imagePrompt = inputValue.trim();
-        // Send both image and prompt
         await addMessage(JSON.stringify({
           type: 'image',
           image: selectedImage,

@@ -1,4 +1,3 @@
-
 // types/chat.ts
 
 import { config } from "@/app/config"
@@ -31,35 +30,35 @@ export interface ChatRequestMessage {
   content: string;
 }
 
-// 채팅 설정을 위한 타입 정의
+// Type definition for chat configuration
 export interface ChatConfig {
-  // 기본 시스템 프롬프트
+  // Default system prompt
   systemPrompt: string
-  // 기본 모델 설정
+  // Default model settings
   model: string
-  // API 관련 설정
+  // API related settings
   api: {
     baseURL: string
     key: string
   }
-  // 채팅 매개변수 설정
+  // Chat parameter settings
   parameters: ChatParameters
 }
 
-// 채팅 매개변수를 위한 타입 정의
+// Type definition for chat parameters
 export interface ChatParameters {
-  temperature: number      // 응답의 무작위성 (0-1)
-  max_tokens: number      // 최대 토큰 수
-  top_p: number          // 누적 확률 임계값 (0-1) 
-  frequency_penalty: number // 반복 페널티 (-2.0-2.0)
-  presence_penalty: number  // 새로운 토픽 선호도 (-2.0-2.0)
-  stream: boolean         // 스트리밍 응답 여부
-  stop: string[]         // 응답 중단 토큰
-  n: number             // 생성할 응답 수
-  user?: string         // 사용자 식별자
+  temperature: number      // Randomness of responses (0-1)
+  max_tokens: number      // Maximum number of tokens
+  top_p: number          // Cumulative probability threshold (0-1)
+  frequency_penalty: number // Repetition penalty (-2.0-2.0)
+  presence_penalty: number  // New topic preference (-2.0-2.0)
+  stream: boolean         // Whether to stream responses
+  stop: string[]         // Response stop tokens
+  n: number             // Number of responses to generate
+  user?: string         // User identifier
 }
 
-// 기본 설정값
+// Default configuration values
 export const defaultConfig: ChatConfig = {
   systemPrompt: `
   You are a helpful AI assistant that engages in natural conversations while providing accurate and informative responses.
@@ -101,7 +100,7 @@ export const defaultConfig: ChatConfig = {
   }
 }
 
-// 채팅 메시지 생성 함수
+// Function to create chat messages
 export function createChatMessages(
   content: string,
   systemPrompt: string,
@@ -118,7 +117,7 @@ export function createChatMessages(
   return messages;
 }
 
-// API 요청 바디 생성 함수
+// Function to create API request body
 export function createRequestBody(
   messages: Message[],
   parameters: Partial<ChatParameters> = {}

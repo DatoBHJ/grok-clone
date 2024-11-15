@@ -565,7 +565,6 @@ const editMessage = useCallback(async (index: number, newUserInput: string) => {
         }]);
       }
     } catch (err) {
-      // console.error('Chat error:', err);
       setError(err instanceof Error ? err.message : 'Failed to send message');
     } finally {
       setIsLoading(false);

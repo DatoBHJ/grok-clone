@@ -5,7 +5,6 @@ import { Redis } from "@upstash/redis";
 import { config } from '../../config';
 import { headers } from 'next/headers'
 
-// Create a new ratelimiter
 let ratelimit: Ratelimit;
 if (config.useRateLimiting) {
   ratelimit = new Ratelimit({
