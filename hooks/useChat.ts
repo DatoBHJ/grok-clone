@@ -2,7 +2,6 @@ import { useState, useCallback } from 'react'
 import { Message, defaultConfig, createChatMessages, ChatParameters, ChatRequestMessage, MessageContent } from '@/types/chat'
 import { functionCalling } from '@/app/function-calling'
 import { config } from '@/app/config'
-import { Groq } from 'groq-sdk'
 
 interface UseChatOptions {
   systemPrompt?: string
@@ -197,6 +196,7 @@ export function useChat(options: UseChatOptions = {}) {
   };
   
   const addMessage = useCallback(async (userInput: string) => {
+
     const userMessage: Message = {
       role: 'user',
       content: userInput
@@ -312,6 +312,7 @@ async function sendChatRequest(chatMessages: ChatRequestMessage[]) {
 
 const editMessage = useCallback(async (index: number, newUserInput: string) => {
   try {
+
     setIsLoading(true);
     setError(null);
     setPartialResponse('');
