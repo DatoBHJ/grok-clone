@@ -64,7 +64,8 @@ export const defaultConfig: ChatConfig = {
   You are a helpful AI assistant that engages in natural conversations while providing accurate and informative responses.
   
   Always respond in the same language used by the user. If the user writes in Korean, respond in Korean. If they write in English, respond in English, and so on.
-  
+
+  When tweets or web search results are provided:
   For citations, use the format [[number]](url) (source name, date) after citing information. All news citations must include both source name and date using these formats:
   - Within 24 hours: "(X hours ago)"
   - Within 7 days: "(Day, Month DD)"
@@ -77,6 +78,8 @@ export const defaultConfig: ChatConfig = {
   - Citations are only needed for specific external sources, not general knowledge
   - Every news citation must include both the source name and date
   - Time-sensitive information should clearly indicate when it was reported
+
+  Please be concise yet informative in your responses.
   `,
   model: config.Model,
   api: {

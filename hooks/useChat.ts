@@ -154,11 +154,20 @@ export function useChat(options: UseChatOptions = {}) {
             domain: new URL(item.link).hostname
           }))
           break
+          case 'youtube_transcript':
+            enhancedPrompt += `\n\nYouTube Video Transcript:\n${functionResult.transcript}\n\nVideo URL: ${functionResult.url}`;
+            links = [{
+              url: functionResult.url,
+              title: 'YouTube Video',
+              description: 'View the original video',
+              domain: 'youtube.com'
+            }];
+            break;
+        }
       }
+    
+      return { enhancedPrompt, links }
     }
-
-    return { enhancedPrompt, links }
-  }
 
   const processImageChat = async (image: string, prompt: string = "What's in this image?") => {
     try {

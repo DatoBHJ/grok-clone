@@ -3,6 +3,7 @@ import { OpenAI } from 'openai'
 import { config } from '@/app/config'
 import { type ChatCompletionTool } from 'openai/resources/chat/completions'
 import { fal } from "@fal-ai/client";
+import { fetchTranscriptWithBackup, getYouTubeVideoId } from '@/lib/youtube-transcript';
 
 const client = new OpenAI({
   apiKey: config.fcAPI_KEY,
@@ -11,6 +12,28 @@ const client = new OpenAI({
 
 
 const functions: ChatCompletionTool[] = [
+  {
+    type: "function",
+    function: {
+      name: "getYouTubeTranscript",
+      description: "Get transcript from YouTube video when user provides a YouTube URL. Supports multiple languages.",
+      parameters: {
+        type: "object",
+        properties: {
+          url: {
+            type: "string",
+            description: "The YouTube video URL",
+          },
+          lang: {
+            type: "string",
+            description: "Language code for transcript (e.g., 'en' for English, 'ko' for Korean, 'ja' for Japanese, etc.)",
+            default: "en"
+          }
+        },
+        required: ["url"],
+      },
+    },
+  },
   {
     type: "function",
     function: {
@@ -112,6 +135,26 @@ const functions: ChatCompletionTool[] = [
   },
 ];
 
+async function getYouTubeTranscript(url: string, lang: string = 'en') {
+  try {
+    const videoId = getYouTubeVideoId(url);
+    if (!videoId) {
+      throw new Error('Invalid YouTube URL');
+    }
+    
+    const transcript = await fetchTranscriptWithBackup(videoId, lang);
+    
+    return {
+      type: 'youtube_transcript' as const,
+      transcript,
+      videoId,
+      url
+    };
+  } catch (error) {
+    console.error('Error fetching YouTube transcript:', error);
+    throw error;
+  }
+}
 
 async function generateImage(prompt: string) {
   try {
@@ -350,7 +393,7 @@ async function getTickers(ticker: string, time: string) {
   }
 }
 
-type FunctionName = "getTickers" | "searchPlaces" | "goShopping" | "searchNewsAndTweets" | "generateImage";
+type FunctionName = "getTickers" | "searchPlaces" | "goShopping" | "searchNewsAndTweets" | "generateImage" | "getYouTubeTranscript";
 
 const availableFunctions: Record<FunctionName, Function> = {
   getTickers,
@@ -358,6 +401,7 @@ const availableFunctions: Record<FunctionName, Function> = {
   goShopping,
   searchNewsAndTweets,
   generateImage,
+  getYouTubeTranscript,
 };
 
 export async function POST(req: Request) {
@@ -375,44 +419,57 @@ export async function POST(req: Request) {
     // Add debug logging to see what's being sent to OpenAI
     console.log('Sending message to OpenAI:', message)
 
-    const response = await client.chat.completions.create({
-      model: config.fcModel,
-      messages: [
-        { 
-          role: "system", 
-          content: `
-          You are a function calling agent. 
-          You will be given a query and a list of functions. 
-          Your task is to call the appropriate function based on the query and return the result in JSON format. 
-          
-          For time parameters, strictly follow these formats:
-          - "today", "24 hours", "today's", "latest" -> time: "d"
-          - "last 3 days", "past 3 days", "3 days" -> time: "d3"
-          - "2 weeks", "last 2 weeks" -> time: "w2"
-          - "1 month", "past month" -> time: "m"
-          - "6 months" -> time: "m6"
-          - "past year", "last year" -> time: "y"
-          - If no time is specified -> time: "w"
-          
-          Example: For "Tell me today's headlines", you must return:
-          {
-            "name": "searchNewsAndTweets",
-            "arguments": {
-              "query": "headlines",
-              "time": "d"
-            }
-          }
-    
-          ONLY CALL A FUNCTION IF YOU ARE HIGHLY CONFIDENT IT WILL BE USED`
-        },
+   // route.ts의 system prompt 부분을 다음과 같이 수정
+
+   const response = await client.chat.completions.create({
+    model: config.fcModel,
+    messages: [
+      { 
+        role: "system", 
+        content: `
+        You are a function calling agent. 
+        You will be given a query and a list of functions. 
+        Your task is to call the appropriate function based on the query and return the result in JSON format. 
+        
+        When the user's message contains a YouTube URL:
+        1. Always use the getYouTubeTranscript function
+        2. Extract the complete URL from the message
+        3. Detect the requested language from the message if specified:
+           - If user mentions "in Korean" or "한글" or "한국어" -> lang: "ko"
+           - If user mentions "in Japanese" or "日本語" -> lang: "ja"
+           - If user mentions "in Chinese" or "中文" -> lang: "zh"
+           - If no language is specified -> lang: "en"
+        
+        For time parameters, strictly follow these formats:
+        - "1 hour", "last hour" -> time: "d1"
+        - "today", "24 hours", "today's", "latest" -> time: "d"
+        - "last 3 days", "past 3 days", "3 days" -> time: "d3"
+        - "2 weeks", "last 2 weeks" -> time: "w2"
+        - "1 month", "past month" -> time: "m"
+        - "6 months" -> time: "m6"
+        - "past year", "last year" -> time: "y"
+        - If no time is specified -> time: "w"
+        
+        Example: For "Tell me today's headlines", you must return:
         {
-          role: "user",
-          content: message
+          "name": "searchNewsAndTweets",
+          "arguments": {
+            "query": "headlines",
+            "time": "d"
+          }
         }
-      ],
-      tools: functions,
-      tool_choice: "auto"
-    });
+  
+        ONLY CALL A FUNCTION IF YOU ARE HIGHLY CONFIDENT IT WILL BE USED`
+      },
+      {
+        role: "user",
+        content: message
+      }
+    ],
+    tools: functions,
+    tool_choice: "auto"
+  });
+  
 
     const toolCalls = response.choices[0]?.message?.tool_calls
 
@@ -451,12 +508,15 @@ export async function POST(req: Request) {
           result = await functionToCall(args.prompt)
           break
         case 'searchNewsAndTweets':
-
           result = await functionToCall(args.query, timeRange)
+          break
+        case 'getYouTubeTranscript':
+          result = await functionToCall(args.url, args.lang)
           break
         default:
           return Response.json({ type: null, data: null }, { status: 200 })
       }
+      
 
       return Response.json(result)
     } catch (error) {
