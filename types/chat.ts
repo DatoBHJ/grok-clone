@@ -86,7 +86,7 @@ export const defaultConfig: ChatConfig = {
   parameters: {
     temperature: 0.7,     // Higher values lead to more creative responses
     max_tokens: 6000,     // Maximum length of response
-    top_p: 0.9,          // Balance between diversity and quality
+    top_p: 1,          // Balance between diversity and quality
     frequency_penalty: 0, // Prevent word repetition (positive values reduce repetition)
     presence_penalty: 0,  // Introduce new topics (positive values favor new topics)
     stream: true,        // Enable real-time response streaming

@@ -10,7 +10,7 @@ import {
   Tooltip,
   TooltipProvider,
   TooltipTrigger,
-} from './tooltip';
+} from '../components/ui/tooltip';
 
 const convertImageToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {

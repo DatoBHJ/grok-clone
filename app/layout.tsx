@@ -3,8 +3,8 @@ import { ThemeProvider } from 'next-themes'
 import { IconGitHub } from '@/components/ui/icons'
 
 export const metadata = {
-  title: 'AI Chat Interface',
-  description: 'A modern AI chat interface built with Next.js',
+  title: 'Groc',
+  description: 'This is a clone of the xAI Grok chat interface',
 }
 
 const Footer = () => (
