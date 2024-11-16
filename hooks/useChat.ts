@@ -3,6 +3,8 @@ import { useState, useCallback } from 'react'
 import { Message, defaultConfig, createChatMessages, ChatParameters, ChatRequestMessage, MessageContent } from '@/types/chat'
 import { functionCalling } from '@/app/function-calling'
 import { config } from '@/app/config'
+import { fetchVideoInfo } from '@/lib/fetchinfo'
+
 
 interface UseChatOptions {
   systemPrompt?: string
@@ -66,10 +68,23 @@ export function useChat(options: UseChatOptions = {}) {
     setPartialResponse('')
   }
 
-  const createEnhancedPrompt = (userMessage: string, functionResult: any | null) => {
+  const createEnhancedPrompt = async (userMessage: string, functionResult: any | null) => {
     let enhancedPrompt = userMessage
     let links = []
-
+  
+    // YouTube URL 체크 및 비디오 정보 추가
+    const youtubeUrlMatch = userMessage.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    
+    if (youtubeUrlMatch) {
+      const videoId = youtubeUrlMatch[1];
+      try {
+        const videoInfo = await fetchVideoInfo(videoId);
+        enhancedPrompt += `\n\nYouTube Video Information:\nTitle: ${videoInfo.title}\nAuthor: ${videoInfo.author}\n`;
+      } catch (error) {
+        console.warn('Failed to fetch video info:', error);
+      }
+    }
+  
     if (functionResult) {
       switch (functionResult.type) {
         case 'stock_info':
@@ -105,12 +120,12 @@ export function useChat(options: UseChatOptions = {}) {
           enhancedPrompt += `\n\nRecent tweets:\n${functionResult.tweets
             .slice(0, config.numberOfTweetToScan)
             .map((tweet: any) => `- ${tweet.title}\n  ${tweet.snippet} (${tweet.date}) (${tweet.link})`)
-            .join('\n')}`;
+            .join('\n')}`
           
           enhancedPrompt += `\n\nRecent news context:\n${functionResult.news
             .slice(0, config.numberOfPagesToScan)
             .map((item: any) => `- ${item.title}: ${item.snippet} (${item.date}) (${item.link})`)
-            .join('\n')}`;
+            .join('\n')}`
           
           links = [
             ...functionResult.tweets.slice(0, config.numberOfTweetToScan).map((tweet: any) => ({
@@ -127,8 +142,9 @@ export function useChat(options: UseChatOptions = {}) {
               date: item.date,
               domain: new URL(item.link).hostname
             }))
-          ];
-          break;
+          ]
+          break
+  
         case 'places':
           enhancedPrompt += `\n\nPlaces context:\n${functionResult.places
             .slice(0, config.numberOfPagesToScan)
@@ -141,6 +157,7 @@ export function useChat(options: UseChatOptions = {}) {
             domain: 'maps.google.com'
           }))
           break
+  
         case 'shopping':
           enhancedPrompt += `\n\nShopping context:\n${functionResult.shopping
             .slice(0, config.numberOfPagesToScan)
@@ -154,20 +171,27 @@ export function useChat(options: UseChatOptions = {}) {
             domain: new URL(item.link).hostname
           }))
           break
-          case 'youtube_transcript':
-            enhancedPrompt += `\n\nYouTube Video Transcript:\n${functionResult.transcript}\n\nVideo URL: ${functionResult.url}`;
-            links = [{
-              url: functionResult.url,
-              // title: 'YouTube Video',
-              // description: 'View the original video',
-              domain: 'youtube.com'
-            }];
-            break;
-        }
+  
+        case 'youtube_transcript':
+          // YouTube transcript인 경우에도 기본 영상 정보 추가
+          try {
+            const videoInfo = await fetchVideoInfo(new URL(functionResult.url).searchParams.get('v') || '');
+            enhancedPrompt += `\n\nYouTube Video Information:\nTitle: ${videoInfo.title}\nAuthor: ${videoInfo.author}\n`;
+          } catch (error) {
+            console.warn('Failed to fetch video info for transcript:', error);
+          }
+          
+          enhancedPrompt += `\n\nYouTube Video Transcript:\n${functionResult.transcript}\n\nVideo URL: ${functionResult.url}`
+          links = [{
+            url: functionResult.url,
+            domain: 'youtube.com'
+          }]
+          break
       }
-    
-      return { enhancedPrompt, links }
     }
+  
+    return { enhancedPrompt, links }
+  }
 
   const processImageChat = async (image: string, prompt: string = "What's in this image?") => {
     try {
@@ -298,7 +322,7 @@ export function useChat(options: UseChatOptions = {}) {
         return;
       }
       
-      const { enhancedPrompt, links } = createEnhancedPrompt(userInput, functionResult);
+      const { enhancedPrompt, links } = await createEnhancedPrompt(userInput, functionResult);
       console.log('enhancedPrompt:', enhancedPrompt);
       const chatMessages = createChatMessages(enhancedPrompt, systemPrompt, messages);
       
@@ -331,28 +355,6 @@ export function useChat(options: UseChatOptions = {}) {
       setPartialResponse('');
     }
   }, [messages, systemPrompt, parameters]);
-
-  async function sendChatRequest(chatMessages: ChatRequestMessage[]) {
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messages: chatMessages,
-        parameters: {
-          ...defaultConfig.parameters,
-          ...parameters
-        }
-      })
-    });
-  
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status}`);
-    }
-  
-    return response;
-  }
 
 const editMessage = useCallback(async (index: number, newUserInput: string) => {
   try {
@@ -427,7 +429,7 @@ const editMessage = useCallback(async (index: number, newUserInput: string) => {
         return;
       }
 
-      const { enhancedPrompt, links } = createEnhancedPrompt(newUserInput, functionResult);
+      const { enhancedPrompt, links } = await createEnhancedPrompt(newUserInput, functionResult);
       
       const previousMessages = messages.slice(0, index);
       const chatMessages = createChatMessages(
@@ -546,7 +548,7 @@ const editMessage = useCallback(async (index: number, newUserInput: string) => {
         return;
       }
 
-      const { enhancedPrompt, links } = createEnhancedPrompt(userContent, functionResult);
+      const { enhancedPrompt, links } = await createEnhancedPrompt(userContent, functionResult);
 
       const chatMessages = createChatMessages(
         enhancedPrompt,
@@ -582,6 +584,29 @@ const editMessage = useCallback(async (index: number, newUserInput: string) => {
       setPartialResponse('');
     }
   }, [messages, systemPrompt, parameters]);
+
+
+  async function sendChatRequest(chatMessages: ChatRequestMessage[]) {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messages: chatMessages,
+        parameters: {
+          ...defaultConfig.parameters,
+          ...parameters
+        }
+      })
+    });
+  
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+  
+    return response;
+  }
 
   
   return {
