@@ -108,7 +108,7 @@ export function Chat({
         )}
         {isLoading && !partialResponse && (
           <div className="py-4 text-center text-zinc-500 dark:text-zinc-400">
-            AI is thinking...
+            Thinking...
           </div>
         )}
         {error &&(
