@@ -1,3 +1,4 @@
+// hooks/useChat.ts
 import { useState, useCallback } from 'react'
 import { Message, defaultConfig, createChatMessages, ChatParameters, ChatRequestMessage, MessageContent } from '@/types/chat'
 import { functionCalling } from '@/app/function-calling'
