@@ -430,35 +430,6 @@ export async function POST(req: Request) {
         You are a function calling agent. 
         You will be given a query and a list of functions. 
         Your task is to call the appropriate function based on the query and return the result in JSON format. 
-        
-        When the user's message contains a YouTube URL:
-        1. Always use the getYouTubeTranscript function
-        2. Extract the complete URL from the message
-        3. Detect the requested language from the message if specified:
-           - If user mentions "in Korean" or "한글" or "한국어" -> lang: "ko"
-           - If user mentions "in Japanese" or "日本語" -> lang: "ja"
-           - If user mentions "in Chinese" or "中文" -> lang: "zh"
-           - If no language is specified -> lang: "en"
-        
-        For time parameters, strictly follow these formats:
-        - "1 hour", "last hour" -> time: "d1"
-        - "today", "24 hours", "today's", "latest" -> time: "d"
-        - "last 3 days", "past 3 days", "3 days" -> time: "d3"
-        - "2 weeks", "last 2 weeks" -> time: "w2"
-        - "1 month", "past month" -> time: "m"
-        - "6 months" -> time: "m6"
-        - "past year", "last year" -> time: "y"
-        - If no time is specified -> time: "w"
-        
-        Example: For "Tell me today's headlines", you must return:
-        {
-          "name": "searchNewsAndTweets",
-          "arguments": {
-            "query": "headlines",
-            "time": "d"
-          }
-        }
-  
         ONLY CALL A FUNCTION IF YOU ARE HIGHLY CONFIDENT IT WILL BE USED`
       },
       {

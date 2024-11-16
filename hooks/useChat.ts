@@ -158,8 +158,8 @@ export function useChat(options: UseChatOptions = {}) {
             enhancedPrompt += `\n\nYouTube Video Transcript:\n${functionResult.transcript}\n\nVideo URL: ${functionResult.url}`;
             links = [{
               url: functionResult.url,
-              title: 'YouTube Video',
-              description: 'View the original video',
+              // title: 'YouTube Video',
+              // description: 'View the original video',
               domain: 'youtube.com'
             }];
             break;
