@@ -23,6 +23,27 @@ export function useChat(options: UseChatOptions = {}) {
     parameters = {} 
   } = options
 
+  // Helper function to get recent context for function calling. Extracting the last two user messages
+  const getRecentContext = (messages: Message[]): string => {
+    const recentUserMessages = messages
+      .filter(msg => msg.role === 'user')
+      .slice(-2);
+
+    if (recentUserMessages.length < 2) {
+      return recentUserMessages[0]?.content.toString() || '';
+    }
+
+    const [previousMessage, currentMessage] = recentUserMessages;
+    const current = typeof currentMessage.content === 'string' 
+      ? currentMessage.content 
+      : currentMessage.content.text;
+    const previous = typeof previousMessage.content === 'string'
+      ? previousMessage.content
+      : previousMessage.content.text;
+
+    return `${current}\n\nPrevious context:\n${previous}`;
+  }
+
   const processStreamResponse = async (reader: ReadableStreamDefaultReader<Uint8Array>) => {
     const decoder = new TextDecoder()
     let accumulatedContent = ''
@@ -68,11 +89,16 @@ export function useChat(options: UseChatOptions = {}) {
     setPartialResponse('')
   }
 
-  const createEnhancedPrompt = async (userMessage: string, functionResult: any | null) => {
-    let enhancedPrompt = userMessage
-    let links = []
+  const createEnhancedPrompt = async (userMessage: string, functionResult: any | null, previousMessages: Message[]) => {
+    // Add conversation context to the enhanced prompt
+    const conversationContext = previousMessages
+      .slice(-4) // Get last 2 pairs of user-assistant interactions
+      .map(msg => `${msg.role}: ${typeof msg.content === 'string' ? msg.content : msg.content.text}`)
+      .join('\n');
+    
+    let enhancedPrompt = `Previous conversation:\n${conversationContext}\n\nCurrent message:\n${userMessage}`;
+    let links = [];
   
-    // YouTube URL 체크 및 비디오 정보 추가
     const youtubeUrlMatch = userMessage.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
     
     if (youtubeUrlMatch) {
@@ -173,7 +199,6 @@ export function useChat(options: UseChatOptions = {}) {
           break
   
         case 'youtube_transcript':
-          // YouTube transcript인 경우에도 기본 영상 정보 추가
           try {
             const videoInfo = await fetchVideoInfo(new URL(functionResult.url).searchParams.get('v') || '');
             enhancedPrompt += `\n\nYouTube Video Information:\nTitle: ${videoInfo.title}\nAuthor: ${videoInfo.author}\n`;
@@ -250,7 +275,6 @@ export function useChat(options: UseChatOptions = {}) {
   };
   
   const addMessage = useCallback(async (userInput: string) => {
-
     const userMessage: Message = {
       role: 'user',
       content: userInput
@@ -276,7 +300,7 @@ export function useChat(options: UseChatOptions = {}) {
         }
         throw new Error(`Rate limit check failed: ${rateLimitResponse.statusText}`);
       }
-      // Check if input is stringified image data
+
       let isImageChat = false;
       let imageData = '';
       let imagePrompt = '';
@@ -307,8 +331,8 @@ export function useChat(options: UseChatOptions = {}) {
         return;
       }
 
-      // Existing text chat logic
-      const functionResult = await functionCalling(userInput);
+      const contextualInput = getRecentContext([...messages, userMessage]);
+      const functionResult = await functionCalling(contextualInput);
       
       if (functionResult?.type === 'image_url') {
         const imgResult = functionResult as any;
@@ -322,8 +346,8 @@ export function useChat(options: UseChatOptions = {}) {
         return;
       }
       
-      const { enhancedPrompt, links } = await createEnhancedPrompt(userInput, functionResult);
-      console.log('enhancedPrompt:', enhancedPrompt);
+      const { enhancedPrompt, links } = await createEnhancedPrompt(userInput, functionResult, messages);
+      console.log('add message enhancedPrompt', enhancedPrompt, '\n');
       const chatMessages = createChatMessages(enhancedPrompt, systemPrompt, messages);
       
       const response = await sendChatRequest(chatMessages);
@@ -348,7 +372,6 @@ export function useChat(options: UseChatOptions = {}) {
         }]);
       }
     } catch (err) {
-      // console.error('Chat error:', err);
       setError(err instanceof Error ? err.message : 'Failed to send message');
     } finally {
       setIsLoading(false);
@@ -356,67 +379,66 @@ export function useChat(options: UseChatOptions = {}) {
     }
   }, [messages, systemPrompt, parameters]);
 
-const editMessage = useCallback(async (index: number, newUserInput: string) => {
-  try {
-    const rateLimitResponse = await fetch('/api/rate-limit', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
+  const editMessage = useCallback(async (index: number, newUserInput: string) => {
+    try {
+      const rateLimitResponse = await fetch('/api/rate-limit', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
 
-    if (!rateLimitResponse.ok) {
-      if (rateLimitResponse.status === 429) {
-        setRateLimitError(true);
-        throw new Error('Rate limit exceeded');
+      if (!rateLimitResponse.ok) {
+        if (rateLimitResponse.status === 429) {
+          setRateLimitError(true);
+          throw new Error('Rate limit exceeded');
+        }
+        throw new Error(`Rate limit check failed: ${rateLimitResponse.statusText}`);
       }
-      throw new Error(`Rate limit check failed: ${rateLimitResponse.statusText}`);
-    }
-    setIsLoading(true);
-    setError(null);
-    setPartialResponse('');
-    
-    setMessages(prev => {
-      const newMessages = [...prev];
-      newMessages[index] = {
+      setIsLoading(true);
+      setError(null);
+      setPartialResponse('');
+      
+      const updatedMessages = [...messages];
+      updatedMessages[index] = {
         role: 'user',
         content: newUserInput
       };
-      return newMessages.slice(0, index + 1);
-    });
+      setMessages(updatedMessages.slice(0, index + 1));
 
-    // Check if input is stringified image data
-    let isImageChat = false;
-    let imageData = '';
-    let imagePrompt = '';
+      let isImageChat = false;
+      let imageData = '';
+      let imagePrompt = '';
 
-    try {
-      const parsed = JSON.parse(newUserInput);
-      if (parsed.type === 'image') {
-        isImageChat = true;
-        imageData = parsed.image;
-        imagePrompt = parsed.prompt;
-      }
-    } catch {
-      isImageChat = newUserInput.includes('data:image');
-      if (isImageChat) {
-        imageData = newUserInput;
-        imagePrompt = "What's in this image?";
-      }
-    }
-
-    if (isImageChat) {
-      const imageResponse = await processImageChat(imageData, imagePrompt);
-      setMessages(prev => [...prev.slice(0, index + 1), {
-        role: 'assistant',
-        content: {
-          text: imageResponse,
+      try {
+        const parsed = JSON.parse(newUserInput);
+        if (parsed.type === 'image') {
+          isImageChat = true;
+          imageData = parsed.image;
+          imagePrompt = parsed.prompt;
         }
-      }]);
-      return;
-    }
+      } catch {
+        isImageChat = newUserInput.includes('data:image');
+        if (isImageChat) {
+          imageData = newUserInput;
+          imagePrompt = "What's in this image?";
+        }
+      }
 
-      const functionResult = await functionCalling(newUserInput);
+      if (isImageChat) {
+        const imageResponse = await processImageChat(imageData, imagePrompt);
+        setMessages(prev => [...prev.slice(0, index + 1), {
+          role: 'assistant',
+          content: {
+            text: imageResponse,
+          }
+        }]);
+        return;
+      }
+
+      const contextualInput = getRecentContext(updatedMessages.slice(0, index + 1));
+      const functionResult = await functionCalling(contextualInput);
+      
       if (functionResult?.type === 'image_url') {
         const imgResult = functionResult as any;
         setMessages(prev => [...prev.slice(0, index + 1), {
@@ -429,9 +451,10 @@ const editMessage = useCallback(async (index: number, newUserInput: string) => {
         return;
       }
 
-      const { enhancedPrompt, links } = await createEnhancedPrompt(newUserInput, functionResult);
+      const previousMessages = updatedMessages.slice(0, index);
+      const { enhancedPrompt, links } = await createEnhancedPrompt(newUserInput, functionResult, previousMessages);
+      console.log('edit message enhancedPrompt', enhancedPrompt, '\n');
       
-      const previousMessages = messages.slice(0, index);
       const chatMessages = createChatMessages(
         enhancedPrompt,
         systemPrompt,
@@ -454,13 +477,12 @@ const editMessage = useCallback(async (index: number, newUserInput: string) => {
         if (links && links.length > 0) {
           messageContent.links = links;
         }
-        setMessages(prev => [...prev, {
+        setMessages(prev => [...prev.slice(0, index + 1), {
           role: 'assistant',
           content: messageContent
         }]);
       }
     } catch (err) {
-      // console.error('Chat error:', err);
       setError(err instanceof Error ? err.message : 'Failed to send message');
     } finally {
       setIsLoading(false);
@@ -503,8 +525,7 @@ const editMessage = useCallback(async (index: number, newUserInput: string) => {
         : lastUserMessage.content.text;
   
       setMessages(prev => prev.slice(0, messageIndex));
-  
-      // Check if input is stringified image data
+
       let isImageChat = false;
       let imageData = '';
       let imagePrompt = '';
@@ -535,7 +556,9 @@ const editMessage = useCallback(async (index: number, newUserInput: string) => {
         return;
       }
 
-      const functionResult = await functionCalling(userContent);
+      const contextualInput = getRecentContext(previousMessages);
+      const functionResult = await functionCalling(contextualInput);
+
       if (functionResult?.type === 'image_url') {
         const imgResult = functionResult as any;
         setMessages(prev => [...prev, {
@@ -548,7 +571,8 @@ const editMessage = useCallback(async (index: number, newUserInput: string) => {
         return;
       }
 
-      const { enhancedPrompt, links } = await createEnhancedPrompt(userContent, functionResult);
+      const { enhancedPrompt, links } = await createEnhancedPrompt(userContent, functionResult, previousMessages.slice(0, -1));
+      console.log('regenerate response enhancedPrompt', enhancedPrompt, '\n');
 
       const chatMessages = createChatMessages(
         enhancedPrompt,
@@ -584,6 +608,7 @@ const editMessage = useCallback(async (index: number, newUserInput: string) => {
       setPartialResponse('');
     }
   }, [messages, systemPrompt, parameters]);
+
 
 
   async function sendChatRequest(chatMessages: ChatRequestMessage[]) {

@@ -7,7 +7,7 @@ export const config = {
 
     fcBaseURL: 'https://api.groq.com/openai/v1',
     fcAPI_KEY: process.env.GROQ_API_KEY,
-    fcModel: 'llama3-8b-8192',
+    fcModel: 'llama-3.1-8b-instant',
     
     // embeddingsModel: 'text-embedding-3-small',
     // textChunkSize: 800, 

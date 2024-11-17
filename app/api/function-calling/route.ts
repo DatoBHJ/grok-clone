@@ -417,7 +417,7 @@ export async function POST(req: Request) {
     }
 
     // Add debug logging to see what's being sent to OpenAI
-    console.log('Sending message to OpenAI:', message)
+    console.log('Sending function call message:', message,'\n')
 
    // route.ts의 system prompt 부분을 다음과 같이 수정
 
@@ -427,10 +427,12 @@ export async function POST(req: Request) {
       { 
         role: "system", 
         content: `
-        You are a function calling agent. 
-        You will be given a query and a list of functions. 
-        Your task is to call the appropriate function based on the query and return the result in JSON format. 
-        ONLY CALL A FUNCTION IF YOU ARE HIGHLY CONFIDENT IT WILL BE USED`
+You are a function calling agent.
+You will be given a query and a list of functions.
+Your task is to call the appropriate function based on the query and return the result in JSON format.
+For ambiguous queries that don't clearly match other functions, use searchNewsAndTweets as the default.
+If the query doesn't require any function calls, you can respond directly without calling functions.
+        `
       },
       {
         role: "user",
@@ -445,7 +447,7 @@ export async function POST(req: Request) {
     const toolCalls = response.choices[0]?.message?.tool_calls
 
     // Debug logging
-    console.log('OpenAI response tool calls:', JSON.stringify(toolCalls, null, 2))
+    console.log('OpenAI response tool calls:', JSON.stringify(toolCalls, null, 2,), '\n')
 
     if (!toolCalls || toolCalls.length === 0) {
       return Response.json({ type: null, data: null }, { status: 200 })
@@ -459,9 +461,9 @@ export async function POST(req: Request) {
       const args = JSON.parse(functionCall.function.arguments)
 
       // Debug logging
-      console.log('Parsed arguments:', args)
+      console.log('Parsed arguments:', args, '\n')
       const timeRange = args.time
-      console.log('Using time range:', timeRange)
+      console.log('Using time range:', timeRange, '\n')
 
       let result
 
