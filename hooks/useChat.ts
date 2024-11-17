@@ -92,7 +92,7 @@ export function useChat(options: UseChatOptions = {}) {
   const createEnhancedPrompt = async (userMessage: string, functionResult: any | null, previousMessages: Message[]) => {
     // Add conversation context to the enhanced prompt
     const conversationContext = previousMessages
-      .slice(-4) // Get last 2 pairs of user-assistant interactions
+      .slice(-10) // Get last 5 pairs of user-assistant interactions
       .map(msg => `${msg.role}: ${typeof msg.content === 'string' ? msg.content : msg.content.text}`)
       .join('\n');
     

@@ -1,6 +1,9 @@
 //app/config.tsx
 export const config = {
     // useOllamaEmbeddings: false,
+    // BaseURL: 'https://api.groq.com/openai/v1',
+    // API_KEY: process.env.GROQ_API_KEY,
+    // Model: 'llama-3.1-8b-instant',
     BaseURL: "https://api.x.ai/v1",
     API_KEY: process.env.XAI_API_KEY,
     Model: 'grok-beta',

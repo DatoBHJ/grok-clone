@@ -209,7 +209,7 @@ async function searchNewsAndTweets(query: string, time: string) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ 
-        num: config.numberOfPagesToScan,
+        num: 10,
         q: query,
         tbs: tbs,
       })
@@ -226,7 +226,7 @@ async function searchNewsAndTweets(query: string, time: string) {
       },
       body: JSON.stringify({ 
         q: tweetQuery,
-        num: config.numberOfTweetToScan,
+        num: 10,
         type: 'search',
         tbs: tbs,
       })
@@ -270,7 +270,7 @@ async function searchPlaces(query: string, location: string) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ 
-        num: config.numberOfPagesToScan,
+        num: 10,
         q: query, 
         location: location 
       }),
@@ -307,7 +307,7 @@ async function goShopping(query: string) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ 
-        num: config.numberOfPagesToScan,
+        num: 10,
         q: query 
       })
     })
@@ -340,7 +340,7 @@ async function getTickers(ticker: string, time: string) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ 
-        num: config.numberOfPagesToScan,
+        num: 10,
         q: `${company} stock market news`,
         tbs: tbs,
       })
@@ -357,7 +357,7 @@ async function getTickers(ticker: string, time: string) {
       },
       body: JSON.stringify({ 
         q: tweetQuery,
-        num: config.numberOfTweetToScan,
+        num: 10,
         type: 'search',
         tbs: tbs,
       })
