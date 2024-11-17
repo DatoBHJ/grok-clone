@@ -416,10 +416,7 @@ export async function POST(req: Request) {
       )
     }
 
-    // Add debug logging to see what's being sent to OpenAI
     console.log('Sending function call message:', message,'\n')
-
-   // route.ts의 system prompt 부분을 다음과 같이 수정
 
    const response = await client.chat.completions.create({
     model: config.fcModel,
