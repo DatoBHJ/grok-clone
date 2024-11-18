@@ -613,6 +613,7 @@ export function useChat(options: UseChatOptions = {}) {
 
 
   async function sendChatRequest(chatMessages: ChatRequestMessage[]) {
+    console.log('sendChatRequest', chatMessages);
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: {
