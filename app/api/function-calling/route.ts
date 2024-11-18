@@ -5,10 +5,6 @@ import { type ChatCompletionTool } from 'openai/resources/chat/completions'
 import { fal } from "@fal-ai/client";
 import { fetchTranscriptWithBackup, getYouTubeVideoId } from '@/lib/youtube-transcript';
 
-const client = new OpenAI({
-  apiKey: config.fcAPI_KEY,
-  baseURL: config.fcBaseURL,
-})
 
 
 const functions: ChatCompletionTool[] = [
@@ -37,14 +33,14 @@ const functions: ChatCompletionTool[] = [
   {
     type: "function",
     function: {
-      name: "searchNewsAndTweets",
-      description: "Search for both recent news articles and tweets using the given query and time range",
+      name: "webSearch",
+      description: "Default search function for general queries, current events, product information, company details, or any topic requiring recent information. Returns both news articles and social media discussions.",
       parameters: {
         type: "object",
         properties: {
           query: {
             type: "string",
-            description: "The search query for news articles and tweets",
+            description: "Search query for any topic, product, company, or general information",
           },
           time: {
             type: "string",
@@ -196,7 +192,7 @@ async function generateImage(prompt: string) {
   }
 }
 
-async function searchNewsAndTweets(query: string, time: string) {
+async function webSearch(query: string, time: string) {
   try {
     const tbs = `qdr:${time}`; // Directly use the time parameter in Serper API format
     console.log('Time range:', tbs);
@@ -393,13 +389,13 @@ async function getTickers(ticker: string, time: string) {
   }
 }
 
-type FunctionName = "getTickers" | "searchPlaces" | "goShopping" | "searchNewsAndTweets" | "generateImage" | "getYouTubeTranscript";
+type FunctionName = "getTickers" | "searchPlaces" | "goShopping" | "webSearch" | "generateImage" | "getYouTubeTranscript";
 
 const availableFunctions: Record<FunctionName, Function> = {
   getTickers,
   searchPlaces,
   goShopping,
-  searchNewsAndTweets,
+  webSearch,
   generateImage,
   getYouTubeTranscript,
 };
@@ -418,17 +414,30 @@ export async function POST(req: Request) {
 
     console.log('Sending function call message:', message,'\n')
 
+    const client = new OpenAI({
+      apiKey: config.fcAPI_KEY,
+      baseURL: config.fcBaseURL,
+    })
+    
    const response = await client.chat.completions.create({
     model: config.fcModel,
     messages: [
       { 
         role: "system", 
         content: `
-You are a function calling agent.
-You will be given a query and a list of functions.
-Your task is to call the appropriate function based on the query and return the result in JSON format.
-For ambiguous queries that don't clearly match other functions, use searchNewsAndTweets as the default.
-If the query doesn't require any function calls, you can respond directly without calling functions.
+You are a function calling agent that analyzes conversations and makes appropriate function calls.
+
+First analyze the conversation context (if provided) and the latest user message to understand:
+1. The full context of what the user is asking about
+2. Any references to previous messages
+3. Any ongoing topics or themes
+
+Then, based on your analysis:
+- Call the most appropriate function that matches the user's intent in context
+- For ambiguous queries, use the webSearch function as default
+- If no function call is needed, you can respond directly
+
+Remember that the latest user message should be interpreted in light of the previous context when deciding which function to call.
         `
       },
       {
@@ -443,7 +452,6 @@ If the query doesn't require any function calls, you can respond directly withou
 
     const toolCalls = response.choices[0]?.message?.tool_calls
 
-    // Debug logging
     console.log('OpenAI response tool calls:', JSON.stringify(toolCalls, null, 2,), '\n')
 
     if (!toolCalls || toolCalls.length === 0) {
@@ -477,7 +485,7 @@ If the query doesn't require any function calls, you can respond directly withou
         case 'generateImage':
           result = await functionToCall(args.prompt)
           break
-        case 'searchNewsAndTweets':
+        case 'webSearch':
           result = await functionToCall(args.query, timeRange)
           break
         case 'getYouTubeTranscript':

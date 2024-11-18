@@ -23,26 +23,15 @@ export function useChat(options: UseChatOptions = {}) {
     parameters = {} 
   } = options
 
-  // Helper function to get recent context for function calling. Extracting the last two user messages
-  const getRecentContext = (messages: Message[]): string => {
-    const recentUserMessages = messages
-      .filter(msg => msg.role === 'user')
-      .slice(-2);
-
-    if (recentUserMessages.length < 2) {
-      return recentUserMessages[0]?.content.toString() || '';
-    }
-
-    const [previousMessage, currentMessage] = recentUserMessages;
-    const current = typeof currentMessage.content === 'string' 
-      ? currentMessage.content 
-      : currentMessage.content.text;
-    const previous = typeof previousMessage.content === 'string'
-      ? previousMessage.content
-      : previousMessage.content.text;
-
-    return `${current}\n\nPrevious context:\n${previous}`;
+  // Helper function to get recent conversation context
+  const getConversationContext = (messages: Message[]): string => {
+    // Get last 4 messages (2 pairs of user-assistant interactions)
+    const recentMessages = messages.slice(-5);
+    return recentMessages
+      .map(msg => `${msg.role}: ${typeof msg.content === 'string' ? msg.content : msg.content.text}`)
+      .join('\n\n');
   }
+
 
   const processStreamResponse = async (reader: ReadableStreamDefaultReader<Uint8Array>) => {
     const decoder = new TextDecoder()
@@ -92,13 +81,14 @@ export function useChat(options: UseChatOptions = {}) {
   const createEnhancedPrompt = async (userMessage: string, functionResult: any | null, previousMessages: Message[]) => {
     // Add conversation context to the enhanced prompt
     const conversationContext = previousMessages
-      .slice(-10) // Get last 5 pairs of user-assistant interactions
+      .slice(-4) // Get last 2 pairs of user-assistant interactions
       .map(msg => `${msg.role}: ${typeof msg.content === 'string' ? msg.content : msg.content.text}`)
       .join('\n');
     
     let enhancedPrompt = `Previous conversation:\n${conversationContext}\n\nCurrent message:\n${userMessage}`;
     let links = [];
   
+    // YouTube URL handling and other enhancement logic remains the same
     const youtubeUrlMatch = userMessage.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
     
     if (youtubeUrlMatch) {
@@ -199,6 +189,7 @@ export function useChat(options: UseChatOptions = {}) {
           break
   
         case 'youtube_transcript':
+          // YouTube transcript인 경우에도 기본 영상 정보 추가
           try {
             const videoInfo = await fetchVideoInfo(new URL(functionResult.url).searchParams.get('v') || '');
             enhancedPrompt += `\n\nYouTube Video Information:\nTitle: ${videoInfo.title}\nAuthor: ${videoInfo.author}\n`;
@@ -286,6 +277,7 @@ export function useChat(options: UseChatOptions = {}) {
     setPartialResponse('');
   
     try {
+      // Rate limit check remains the same
       const rateLimitResponse = await fetch('/api/rate-limit', {
         method: 'GET',
         headers: {
@@ -301,6 +293,7 @@ export function useChat(options: UseChatOptions = {}) {
         throw new Error(`Rate limit check failed: ${rateLimitResponse.statusText}`);
       }
 
+      // Image chat handling remains the same
       let isImageChat = false;
       let imageData = '';
       let imagePrompt = '';
@@ -331,8 +324,10 @@ export function useChat(options: UseChatOptions = {}) {
         return;
       }
 
-      const contextualInput = getRecentContext([...messages, userMessage]);
-      const functionResult = await functionCalling(contextualInput);
+      // Pass the last 2 pairs of conversation context to function calling
+      const conversationContext = getConversationContext([...messages, userMessage]);
+      const functionResult = await functionCalling(conversationContext);
+      
       
       if (functionResult?.type === 'image_url') {
         const imgResult = functionResult as any;
@@ -381,6 +376,7 @@ export function useChat(options: UseChatOptions = {}) {
 
   const editMessage = useCallback(async (index: number, newUserInput: string) => {
     try {
+      // Rate limit check remains the same
       const rateLimitResponse = await fetch('/api/rate-limit', {
         method: 'GET',
         headers: {
@@ -406,6 +402,7 @@ export function useChat(options: UseChatOptions = {}) {
       };
       setMessages(updatedMessages.slice(0, index + 1));
 
+      // Image chat handling remains the same
       let isImageChat = false;
       let imageData = '';
       let imagePrompt = '';
@@ -436,8 +433,9 @@ export function useChat(options: UseChatOptions = {}) {
         return;
       }
 
-      const contextualInput = getRecentContext(updatedMessages.slice(0, index + 1));
-      const functionResult = await functionCalling(contextualInput);
+      // Pass the last 2 pairs of conversation context to function calling
+      const conversationContext = getConversationContext(updatedMessages.slice(0, index + 1));
+      const functionResult = await functionCalling(conversationContext);
       
       if (functionResult?.type === 'image_url') {
         const imgResult = functionResult as any;
@@ -492,6 +490,7 @@ export function useChat(options: UseChatOptions = {}) {
 
   const regenerateResponse = useCallback(async (messageIndex: number) => {
     try {
+      // Rate limit check remains the same
       const rateLimitResponse = await fetch('/api/rate-limit', {
         method: 'GET',
         headers: {
@@ -526,6 +525,7 @@ export function useChat(options: UseChatOptions = {}) {
   
       setMessages(prev => prev.slice(0, messageIndex));
 
+      // Image chat handling remains the same
       let isImageChat = false;
       let imageData = '';
       let imagePrompt = '';
@@ -556,8 +556,9 @@ export function useChat(options: UseChatOptions = {}) {
         return;
       }
 
-      const contextualInput = getRecentContext(previousMessages);
-      const functionResult = await functionCalling(contextualInput);
+      // Pass the last 2 pairs of conversation context to function calling
+      const conversationContext = getConversationContext(previousMessages);
+      const functionResult = await functionCalling(conversationContext);
 
       if (functionResult?.type === 'image_url') {
         const imgResult = functionResult as any;
