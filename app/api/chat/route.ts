@@ -2,12 +2,35 @@
 import { createRequestBody, defaultConfig } from '@/types/chat'
 import { NextResponse } from 'next/server'
 
+// Helper function to clean image data from messages
+function cleanImageMessages(messages: any[]) {
+  return messages.map(msg => {
+    if (msg.role === 'user') {
+      try {
+        const content = JSON.parse(msg.content)
+        console.log('Content:', content.prompt)
+        if (content.type === 'image') {
+          return {
+            ...msg,
+            content: content.prompt + '(image)'
+          }
+        }
+      } catch (e) {
+        // If content is not JSON or doesn't have expected structure,
+        // return original message unchanged
+      }
+    }
+    return msg
+  })
+}
+
 export async function POST(request: Request) {
   try {
     const { messages, parameters } = await request.json()
-    console.log('Chat request:\n', messages, parameters)
-
-    const requestBody = createRequestBody(messages, parameters)
+    // Clean messages before creating request body
+    const cleanedMessages = cleanImageMessages(messages)
+    console.log('Cleaned messages:', cleanedMessages)
+    const requestBody = createRequestBody(cleanedMessages, parameters)
     
     const response = await fetch(`${defaultConfig.api.baseURL}/chat/completions`, {
       method: 'POST',
