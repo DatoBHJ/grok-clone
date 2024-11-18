@@ -201,7 +201,7 @@ export default function Home() {
 
   if (showChat) {
     return (
-      <div className="flex flex-col h-screen bg-background">
+      <div className="flex flex-col h-screen overflow-hidden bg-background">
         <Header onBack={handleBack} />
         <div className="flex-1 overflow-y-auto">
           <Chat 
@@ -220,7 +220,7 @@ export default function Home() {
   }
 
   return (
-    <div className="bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground">
       <main className="max-w-3xl mx-auto p-4">
         <div className="mb-16 mt-8">
           <h1 className="text-4xl font-medium text-center mb-8 text-black dark:text-white">Groc</h1>
