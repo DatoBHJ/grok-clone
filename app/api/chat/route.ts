@@ -5,7 +5,8 @@ import { NextResponse } from 'next/server'
 export async function POST(request: Request) {
   try {
     const { messages, parameters } = await request.json()
-    
+    console.log('Chat request:\n', messages, parameters)
+
     const requestBody = createRequestBody(messages, parameters)
     
     const response = await fetch(`${defaultConfig.api.baseURL}/chat/completions`, {

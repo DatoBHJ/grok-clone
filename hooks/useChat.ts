@@ -1,6 +1,6 @@
 // hooks/useChat.ts
 import { useState, useCallback } from 'react'
-import { Message, defaultConfig, createChatMessages, ChatParameters, ChatRequestMessage, MessageContent } from '@/types/chat'
+import { Message, defaultConfig, createChatMessages, ChatParameters, ChatRequestMessage, MessageContent, Role } from '@/types/chat'
 import { functionCalling } from '@/app/function-calling'
 import { config } from '@/app/config'
 import { fetchVideoInfo } from '@/lib/fetchinfo'
@@ -23,15 +23,17 @@ export function useChat(options: UseChatOptions = {}) {
     parameters = {} 
   } = options
 
-  // Helper function to get recent conversation context
-  const getConversationContext = (messages: Message[]): string => {
+  const getConversationContext = (messages: Message[]): Message[] => {
     // Get last 4 messages (2 pairs of user-assistant interactions)
-    const recentMessages = messages.slice(-5);
-    return recentMessages
-      .map(msg => `${msg.role}: ${typeof msg.content === 'string' ? msg.content : msg.content.text}`)
-      .join('\n\n');
-  }
-
+    const recentMessages = messages.slice(-4);
+    
+    // Transform messages into proper OpenAI message format while preserving types
+    return recentMessages.map(msg => ({
+      role: msg.role as Role,  // Ensure role is of type Role
+      content: typeof msg.content === 'string' ? msg.content : msg.content.text
+    }));
+  };
+  
 
   const processStreamResponse = async (reader: ReadableStreamDefaultReader<Uint8Array>) => {
     const decoder = new TextDecoder()
@@ -78,17 +80,11 @@ export function useChat(options: UseChatOptions = {}) {
     setPartialResponse('')
   }
 
-  const createEnhancedPrompt = async (userMessage: string, functionResult: any | null, previousMessages: Message[]) => {
-    // Add conversation context to the enhanced prompt
-    const conversationContext = previousMessages
-      .slice(-4) // Get last 2 pairs of user-assistant interactions
-      .map(msg => `${msg.role}: ${typeof msg.content === 'string' ? msg.content : msg.content.text}`)
-      .join('\n');
-    
-    let enhancedPrompt = `Previous conversation:\n${conversationContext}\n\nCurrent message:\n${userMessage}`;
+  const createEnhancedPrompt = async (userMessage: string, functionResult: any | null) => {
+    let enhancedPrompt = userMessage;
     let links = [];
   
-    // YouTube URL handling and other enhancement logic remains the same
+    // YouTube URL handling
     const youtubeUrlMatch = userMessage.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
     
     if (youtubeUrlMatch) {
@@ -189,7 +185,6 @@ export function useChat(options: UseChatOptions = {}) {
           break
   
         case 'youtube_transcript':
-          // YouTube transcript인 경우에도 기본 영상 정보 추가
           try {
             const videoInfo = await fetchVideoInfo(new URL(functionResult.url).searchParams.get('v') || '');
             enhancedPrompt += `\n\nYouTube Video Information:\nTitle: ${videoInfo.title}\nAuthor: ${videoInfo.author}\n`;
@@ -341,8 +336,7 @@ export function useChat(options: UseChatOptions = {}) {
         return;
       }
       
-      const { enhancedPrompt, links } = await createEnhancedPrompt(userInput, functionResult, messages);
-      console.log('add message enhancedPrompt', enhancedPrompt, '\n');
+      const { enhancedPrompt, links } = await createEnhancedPrompt(userInput, functionResult);
       const chatMessages = createChatMessages(enhancedPrompt, systemPrompt, messages);
       
       const response = await sendChatRequest(chatMessages);
@@ -450,8 +444,7 @@ export function useChat(options: UseChatOptions = {}) {
       }
 
       const previousMessages = updatedMessages.slice(0, index);
-      const { enhancedPrompt, links } = await createEnhancedPrompt(newUserInput, functionResult, previousMessages);
-      console.log('edit message enhancedPrompt', enhancedPrompt, '\n');
+      const { enhancedPrompt, links } = await createEnhancedPrompt(newUserInput, functionResult);
       
       const chatMessages = createChatMessages(
         enhancedPrompt,
@@ -559,7 +552,7 @@ export function useChat(options: UseChatOptions = {}) {
       // Pass the last 2 pairs of conversation context to function calling
       const conversationContext = getConversationContext(previousMessages);
       const functionResult = await functionCalling(conversationContext);
-
+      
       if (functionResult?.type === 'image_url') {
         const imgResult = functionResult as any;
         setMessages(prev => [...prev, {
@@ -572,8 +565,7 @@ export function useChat(options: UseChatOptions = {}) {
         return;
       }
 
-      const { enhancedPrompt, links } = await createEnhancedPrompt(userContent, functionResult, previousMessages.slice(0, -1));
-      console.log('regenerate response enhancedPrompt', enhancedPrompt, '\n');
+      const { enhancedPrompt, links } = await createEnhancedPrompt(userContent, functionResult);
 
       const chatMessages = createChatMessages(
         enhancedPrompt,
@@ -613,7 +605,6 @@ export function useChat(options: UseChatOptions = {}) {
 
 
   async function sendChatRequest(chatMessages: ChatRequestMessage[]) {
-    console.log('sendChatRequest', chatMessages);
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: {

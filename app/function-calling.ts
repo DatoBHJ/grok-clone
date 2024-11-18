@@ -1,12 +1,14 @@
 // function-calling.ts
-export async function functionCalling(message: string): Promise<any> {
+import { Message } from '@/types/chat'
+
+export async function functionCalling(messages: Message[]): Promise<any> {
   try {
     const response = await fetch('/api/function-calling', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ message })
+      body: JSON.stringify({ message: messages })
     });
 
     const result = await response.json();

@@ -55,8 +55,8 @@ const functions: ChatCompletionTool[] = [
   {
     type: "function",
     function: {
-      name: "getTickers",
-      description: "Get a single market name and stock ticker if the user mentions a public company. Include time range for news search.",
+      name: "getStockInfo",
+      description: "Get stock information, news, and social media discussions for a public company",
       parameters: {
         type: "object",
         properties: {
@@ -205,7 +205,7 @@ async function webSearch(query: string, time: string) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ 
-        num: 10,
+        num: 5,
         q: query,
         tbs: tbs,
       })
@@ -222,7 +222,7 @@ async function webSearch(query: string, time: string) {
       },
       body: JSON.stringify({ 
         q: tweetQuery,
-        num: 10,
+        num: 5,
         type: 'search',
         tbs: tbs,
       })
@@ -266,7 +266,7 @@ async function searchPlaces(query: string, location: string) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ 
-        num: 10,
+        num: 5,
         q: query, 
         location: location 
       }),
@@ -303,7 +303,7 @@ async function goShopping(query: string) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ 
-        num: 10,
+        num: 5,
         q: query 
       })
     })
@@ -323,7 +323,7 @@ async function goShopping(query: string) {
   }
 }
 
-async function getTickers(ticker: string, time: string) {
+async function getStockInfo(ticker: string, time: string) {
   try {
     const company = ticker.split(':')[1];
     const tbs = `qdr:${time}`; // Directly use the time parameter in Serper API format
@@ -336,7 +336,7 @@ async function getTickers(ticker: string, time: string) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ 
-        num: 10,
+        num: 5,
         q: `${company} stock market news`,
         tbs: tbs,
       })
@@ -353,7 +353,7 @@ async function getTickers(ticker: string, time: string) {
       },
       body: JSON.stringify({ 
         q: tweetQuery,
-        num: 10,
+        num: 5,
         type: 'search',
         tbs: tbs,
       })
@@ -389,10 +389,10 @@ async function getTickers(ticker: string, time: string) {
   }
 }
 
-type FunctionName = "getTickers" | "searchPlaces" | "goShopping" | "webSearch" | "generateImage" | "getYouTubeTranscript";
+type FunctionName = "getStockInfo" | "searchPlaces" | "goShopping" | "webSearch" | "generateImage" | "getYouTubeTranscript";
 
 const availableFunctions: Record<FunctionName, Function> = {
-  getTickers,
+  getStockInfo,
   searchPlaces,
   goShopping,
   webSearch,
@@ -402,54 +402,89 @@ const availableFunctions: Record<FunctionName, Function> = {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json()
-    const message = body.message
+    const body = await req.json();
+    const contextMessages = body.message;
 
-    if (!message) {
-      return Response.json(
-        { error: 'Missing message in request body' },
-        { status: 400 }
-      )
-    }
-
-    console.log('Sending function call message:', message,'\n')
-
+    const promptMessages = [
+      {
+        role: "system",
+        content: `You are a function calling agent specialized in determining when and how to use available functions. Your goal is to analyze queries and make appropriate function calls while following these guidelines:
+      
+      CORE PRINCIPLES:
+      1. Accuracy over convenience - Only call specialized functions when user intent explicitly matches
+      2. Default to webSearch for general queries
+      3. No function call is better than an incorrect function call
+      
+      AVAILABLE FUNCTIONS:
+      1. webSearch: Default for general queries and current events
+         - Use time parameter strategically (d=day, w=week, m=month, y=year)
+         - Recent news: d/w
+         - Historical context: m/y
+      
+      2. getStockInfo: ONLY for specific public company analysis
+         - REQUIRE: Clear mention of a public company
+         - Example: "Tell me about Apple stock" -> getStockInfo
+         - NOT FOR: General market trends or vague company references
+      
+      3. searchPlaces: ONLY for location-specific searches
+         - REQUIRE: Both search term AND location
+         - Example: "Find coffee shops in Seattle"
+      
+      4. goShopping: ONLY for product searches
+         - REQUIRE: Clear shopping/product intent
+         - Example: "Where can I buy headphones?"
+      
+      5. generateImage: ONLY for image creation requests
+         - REQUIRE: Clear creation intent
+         - Example: "Create an image of a sunset"
+      
+      6. getYouTubeTranscript: ONLY for YouTube video transcription
+         - REQUIRE: Valid YouTube URL
+         - Example: "Get transcript from https://youtube.com/..."
+      
+      DECISION PROCESS:
+      1. Analyze query context
+      2. Ask yourself:
+         - Is the user's intent absolutely clear?
+         - Does it EXACTLY match a specialized function's purpose?
+         - Would webSearch provide better/more complete information?
+         - Is there ANY doubt about which function to use?
+      
+      EXAMPLES:
+      Good Function Calls:
+      ✓ "What's AAPL's latest news?" -> getStockInfo(ticker: "NASDAQ:AAPL", time: "d")
+      ✓ "Find restaurants in Tokyo" -> searchPlaces(query: "restaurants", location: "Tokyo")
+      ✓ "Latest news about AI" -> webSearch(query: "AI news", time: "d")
+      
+      Avoid Function Calls:
+      ✗ "How's the market doing?" -> webSearch (too broad for getStockInfo)
+      ✗ "Tell me about Tesla" -> webSearch (ambiguous intent)
+      ✗ "Find good investments" -> webSearch (not specific enough)
+      
+      TIMEFRAME GUIDELINES:
+      - Breaking news: d (past day)
+      - Recent developments: w (past week)
+      - Industry trends: m (past month)
+      - Historical context: y (past year)
+      
+      When in doubt, default to webSearch with appropriate timeframe or make no function call at all.`
+      },
+      ...contextMessages
+    ];
+    // console.log('Full prompt being sent to OpenAI:\n', JSON.stringify(promptMessages, null, 2), '\n');
+    
     const client = new OpenAI({
       apiKey: config.fcAPI_KEY,
       baseURL: config.fcBaseURL,
-    })
+    });
     
-   const response = await client.chat.completions.create({
-    model: config.fcModel,
-    messages: [
-      { 
-        role: "system", 
-        content: `
-You are a function calling agent that analyzes conversations and makes appropriate function calls.
+    const response = await client.chat.completions.create({
+      model: config.fcModel,
+      messages: promptMessages,
+      tools: functions,
+      tool_choice: "auto"
 
-First analyze the conversation context (if provided) and the latest user message to understand:
-1. The full context of what the user is asking about
-2. Any references to previous messages
-3. Any ongoing topics or themes
-
-Then, based on your analysis:
-- Call the most appropriate function that matches the user's intent in context
-- For ambiguous queries, use the webSearch function as default
-- If no function call is needed, you can respond directly
-
-Remember that the latest user message should be interpreted in light of the previous context when deciding which function to call.
-        `
-      },
-      {
-        role: "user",
-        content: message
-      }
-    ],
-    tools: functions,
-    tool_choice: "auto"
-  });
-  
-
+    });
     const toolCalls = response.choices[0]?.message?.tool_calls
 
     console.log('OpenAI response tool calls:', JSON.stringify(toolCalls, null, 2,), '\n')
@@ -473,7 +508,7 @@ Remember that the latest user message should be interpreted in light of the prev
       let result
 
       switch (functionName) {
-        case 'getTickers':
+        case 'getStockInfo':
           result = await functionToCall(args.ticker, timeRange)
           break
         case 'searchPlaces':
