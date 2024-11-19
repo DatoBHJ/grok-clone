@@ -7,7 +7,7 @@ export const config = {
     fcAPI_KEY: process.env.GROQ_API_KEY,
     fcModel: 'llama-3.1-8b-instant',
     useRateLimiting: true, 
-    numberOfPagesToScan: 4,
-    numberOfTweetToScan: 4,
+    numberOfPagesToScan: 8,
+    numberOfTweetToScan: 8,
 }
 
