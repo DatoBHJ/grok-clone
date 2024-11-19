@@ -102,7 +102,7 @@ export function ChatInput({ onSend, initialValue = '', isLoading }: ChatInputPro
   return (
     <div className="max-w-3xl mx-auto">
       {selectedImage && (
-        <div className="mb-4 px-4">
+      <div className="mb-4 px-4 overflow-hidden"> {/* overflow-hidden 추가 */}
           <div className="relative inline-block">
             <img 
               src={selectedImage} 

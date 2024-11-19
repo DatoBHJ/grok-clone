@@ -85,7 +85,7 @@ export function Chat({
   };
 
   return (
-  <div className="absolute inset-0 flex flex-col">
+    <div className="absolute inset-0 flex flex-col overflow-hidden"> {/* overflow-hidden 추가 */}
     {rateLimitError && <RateLimit />}
     <div className="flex-1 overflow-y-auto"> 
       <div className="pb-32">
