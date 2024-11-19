@@ -1,7 +1,7 @@
 # Groc.lol - xAI's Grok clone
 
 This is an open source clone of xAI's Grok.
-Made this just for fun. Don't sue me xAI.
+Made this just for fun. Don't sue me xAI. I love You.
 
 **Important:** Groc is 100% unaffiliated with xAI.
 
@@ -30,7 +30,6 @@ Live Demo: [groc.lol](https://www.groc.lol)
 - Web search: Serper
 - Rate limiting: Upstash
 - Image generation: FAL
-- Framework: Next.js
 
 ## Setup
 
@@ -78,17 +77,9 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 If you find this project helpful:
 - ⭐ Star this repo
-- 🌐 Visit [groc.lol](https://www.groc.lol)
 - ☕ [Buy me a coffee](https://buymeacoffee.com/KingBob)
 
 ## 📞 Contact
 
 - 🐦 X: [@DatoBHJ](https://x.com/DatoBHJ)
 - 📧 Email: datobhj@gmail.com
-- 🌐 Website: [groc.lol](https://www.groc.lol)
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme).
-
-Check out the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
