@@ -9,6 +9,8 @@ Clone the repo and customize your llm model for better results cause the models 
 
 Live Demo: [groc.lol](https://www.groc.lol)
 
+Mobile app: PWA supported, click on the "Add to Home Screen" button in your browser.
+
 ## Preview
 
 ![Website Preview](https://github.com/DatoBHJ/grok-clone/blob/main/assets/preview.png?raw=true)
