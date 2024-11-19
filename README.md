@@ -5,6 +5,8 @@ Made this just for fun. Don't sue me xAI. I love You.
 
 **Important:** Groc is 100% unaffiliated with xAI.
 
+Clone the repo and customize your llm model for better results cause the models used in this project are not the best. (I mean, it's free and open source, and I'm broke uni student)
+
 Live Demo: [groc.lol](https://www.groc.lol)
 
 ## Preview
