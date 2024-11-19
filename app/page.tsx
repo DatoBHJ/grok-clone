@@ -201,7 +201,7 @@ export default function Home() {
 
   if (showChat) {
     return (
-      <div className="flex flex-col h-screen bg-background overflow-hidden"> {/* overflow-hidden 추가 */}
+      <div className="flex flex-col h-screen bg-background select-none overflow-hidden">
         <Header onBack={handleBack} />
         <div className="flex-1 relative"> 
           <Chat 
