@@ -100,26 +100,26 @@ export function ChatInput({ onSend, initialValue = '', isLoading }: ChatInputPro
 
   
   return (
-    <div className="w-full max-w-3xl mx-auto select-none overflow-hidden">
+    <div className="max-w-3xl mx-auto">
       {selectedImage && (
-      <div className="mb-4 px-4 select-none overflow-hidden">
+        <div className="mb-4 px-4">
           <div className="relative inline-block">
             <img 
               src={selectedImage} 
               alt="Selected" 
-              className="max-h-32 rounded-lg select-none"
-              />
+              className="max-h-32 rounded-lg"
+            />
             <button
               onClick={removeSelectedImage}
               className="absolute top-2 right-2 p-1 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
-              >
+            >
               <X className="w-4 h-4 text-white" />
             </button>
           </div>
         </div>
       )}
       
-      <div className="relative px-4 select-none overflow-hidden">
+      <div className="relative ">
       <input
         ref={inputRef}
         type="text"
