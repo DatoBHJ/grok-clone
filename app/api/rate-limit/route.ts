@@ -9,7 +9,7 @@ let ratelimit: Ratelimit;
 if (config.useRateLimiting) {
   ratelimit = new Ratelimit({
     redis: Redis.fromEnv(),
-    limiter: Ratelimit.slidingWindow(100, "60 m") 
+    limiter: Ratelimit.slidingWindow(5, "60 m") 
   });
 }
 
