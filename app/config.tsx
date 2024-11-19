@@ -5,9 +5,10 @@ export const config = {
     Model: 'grok-beta',
     fcBaseURL: 'https://api.groq.com/openai/v1',
     fcAPI_KEY: process.env.GROQ_API_KEY,
-    fcModel: 'llama-3.1-8b-instant',
+    fcModel: 'llama-3.1-70b-versatile',
+    // fcModel: 'llama-3.1-8b-instant',
     useRateLimiting: true, 
-    numberOfPagesToScan: 8,
-    numberOfTweetToScan: 8,
+    numberOfPagesToScan: 10,
+    numberOfTweetToScan: 10,
 }
 

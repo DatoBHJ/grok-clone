@@ -21,7 +21,7 @@ const LinkPreview: React.FC<LinkPreviewProps> = ({ links = [] }) => {
 
   return (
     <div className="relative w-full py-4">
-      <div className="absolute left-2 top-1/2 -translate-y-1/2 z-10">
+      {/* <div className="absolute left-2 top-1/2 -translate-y-1/2 z-10">
         <button 
           onClick={() => scroll('left')}
           className="p-1 rounded-full bg-white dark:bg-white/10 shadow-md hover:bg-gray-50 dark:hover:bg-white/20 transition-colors"
@@ -37,7 +37,7 @@ const LinkPreview: React.FC<LinkPreviewProps> = ({ links = [] }) => {
         >
           <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
         </button>
-      </div>
+      </div> */}
 
       <div 
         ref={scrollContainerRef}

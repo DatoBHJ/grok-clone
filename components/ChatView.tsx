@@ -41,8 +41,8 @@ const PROSE_STYLES = {
     button: "text-white text-sm bg-black/50 px-4 py-2 rounded-full hover:bg-black/70 transition-colors"
   },
   links: {
-    twitter: "text-blue-500 hover:underline dark:text-blue-400",
-    regular: "text-red-600 hover:underline dark:text-red-400", 
+    twitter: "text-blue-500 hover:underline dark:text-blue-400 text-lg",
+    regular: "text-red-600 hover:underline dark:text-red-400 text-lg", 
     citation: "text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 cursor-pointer",
   },
 } as const;
