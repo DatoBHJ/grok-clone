@@ -85,9 +85,9 @@ export function Chat({
   };
 
   return (
-    <>
-          {rateLimitError && <RateLimit />}
-
+  <div className="absolute inset-0 flex flex-col">
+    {rateLimitError && <RateLimit />}
+    <div className="flex-1 overflow-y-auto"> 
       <div className="pb-32">
         {displayMessages.map((message, index) => (
           <ChatMessage
@@ -181,6 +181,7 @@ export function Chat({
           />
         </div>
       </div>
-    </>
+    </div>
+  </div>
   );
 }
