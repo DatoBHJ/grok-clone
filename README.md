@@ -1,24 +1,25 @@
-# Groc - xAI's Grok UI Clone
+# Groc.lol - xAI's Grok clone
 
-This is an open source clone of xAI's Grok UI built with [Next.js](https://nextjs.org).
+This is an open source clone of xAI's Grok.
+Made this just for fun. Don't sue me xAI.
 
 **Important:** Groc is 100% unaffiliated with xAI.
 
-🌐 Live Demo: [groc.lol](https://www.groc.lol)
+Live Demo: [groc.lol](https://www.groc.lol)
 
-## 🖼️ Preview
+## Preview
 
-![Website Preview](https://github.com/DatoBHJ/wakethedead/blob/main/assets/preview.png?raw=true)
+![Website Preview](https://github.com/DatoBHJ/grok-clone/blob/main/assets/preview.png?raw=true)
 
-[Try Wake The Dead Now →](https://www.groc.lol)
+[Try Groc Now →](https://www.groc.lol)
 
 ## Features
 
-- Chat interface similar to Grok
-- Perplexity style Web search capabilities
+- Youtube link access (Chat, summary, ...etc)
+- Perplexity style Web search capabilities, searching both tweets and web pages.
 - Image generation using FLUX.1 by Black Forest Labs
 - Vision capabilities (chat with images)
-- Rate limiting support
+- Rate limiting 
 - Customizable LLM settings
 
 ## Tech Stack
@@ -36,6 +37,7 @@ This is an open source clone of xAI's Grok UI built with [Next.js](https://nextj
 ### Required API Keys
 
 ```bash
+XAI_API_KEY=your_key 
 GROQ_API_KEY=your_key
 SERPER_API_KEY=your_key
 FAL_KEY=your_key

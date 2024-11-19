@@ -16,8 +16,6 @@ function cleanImageMessages(messages: any[]) {
           }
         }
       } catch (e) {
-        // If content is not JSON or doesn't have expected structure,
-        // return original message unchanged
       }
     }
     return msg
@@ -27,7 +25,6 @@ function cleanImageMessages(messages: any[]) {
 export async function POST(request: Request) {
   try {
     const { messages, parameters } = await request.json()
-    // Clean messages before creating request body
     const cleanedMessages = cleanImageMessages(messages)
     console.log('Cleaned messages:', cleanedMessages)
     const requestBody = createRequestBody(cleanedMessages, parameters)

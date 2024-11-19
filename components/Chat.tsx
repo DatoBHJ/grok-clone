@@ -112,7 +112,6 @@ export function Chat({
           </div>
         )}
         {error &&(
-          // error message: Rate limit exceeded. Try again later.
           <div className="py-4 text-center text-red-500">
             {error}. Try again later.
           </div>

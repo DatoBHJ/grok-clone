@@ -26,10 +26,8 @@ export function useChat(options: UseChatOptions = {}) {
   const getConversationContext = (messages: Message[]): Message[] => {
     // Get last 4 messages (2 pairs of user-assistant interactions)
     const recentMessages = messages.slice(-4);
-    
-    // Transform messages into proper OpenAI message format while preserving types
     return recentMessages.map(msg => ({
-      role: msg.role as Role,  // Ensure role is of type Role
+      role: msg.role as Role,  
       content: typeof msg.content === 'string' ? msg.content : msg.content.text
     }));
   };
@@ -84,7 +82,6 @@ export function useChat(options: UseChatOptions = {}) {
     let enhancedPrompt = userMessage;
     let links = [];
   
-    // YouTube URL handling
     const youtubeUrlMatch = userMessage.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
     
     if (youtubeUrlMatch) {
@@ -549,7 +546,6 @@ export function useChat(options: UseChatOptions = {}) {
         return;
       }
 
-      // Pass the last 2 pairs of conversation context to function calling
       const conversationContext = getConversationContext(previousMessages);
       const functionResult = await functionCalling(conversationContext);
       
