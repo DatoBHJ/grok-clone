@@ -100,7 +100,7 @@ const NewsCard = ({ title, meta }: { title: string; meta: string }) => (
 );
 
 const Header = ({ onBack }: { onBack: () => void }) => (
-  <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/70">
+  <header className="sticky top-0 z-50 bg-background/70">
     <div className="w-full mx-auto">
       <div className="p-4 flex items-center gap-4">
         <button 

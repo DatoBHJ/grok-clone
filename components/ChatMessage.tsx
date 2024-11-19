@@ -2,7 +2,7 @@ import { MessageContent } from "@/types/chat"
 import { Copy, Pencil, RotateCcw, Share, ThumbsDown, ThumbsUp } from "lucide-react"
 import { useState } from "react"
 import ChatView from "./ChatView"
-import LinkPreview from "./LinkPreview"
+import SourcePills from "./SourcePills"
 
 interface ChatMessageProps {
   role: 'assistant' | 'user' | 'system'
@@ -55,7 +55,7 @@ export function ChatMessage({
   const hasLinks = 'links' in parsedContent && parsedContent.links && parsedContent.links.length > 0;
 
   return (
-    <div className="py-6">
+    <div className="mb-6">
       <div className="max-w-3xl mx-auto px-4">
         {role === 'user' ? (
           <div 
@@ -80,6 +80,7 @@ export function ChatMessage({
                   {/* Show text */}
                   {hasText && <span>{parsedContent.text}</span>}
                 </div>
+                
                 {onStartEdit && (
                   <button 
                     className={`p-1.5 rounded-md transition-colors ${isHovered ? 'opacity-100' : 'opacity-0'} flex-shrink-0`}
@@ -93,58 +94,61 @@ export function ChatMessage({
                     />
                   </button>
                 )}
+                    
               </div>
             </div>
+            
           </div>
         ) : (
           <div className="flex flex-col gap-2">
+          {hasLinks && typeof content !== 'string' && content.links && (
+            <div className="mb-2">
+              <SourcePills links={content.links} />
+            </div>
+          )}
+          
+          {hasText && (
+            <div className="text-gray-900 dark:text-white">
+              <ChatView content={parsedContent} />
+            </div>
+          )}
+          
+          {hasImages && (
+            <>
+              <div className="text-gray-900 dark:text-white">
+                <ChatView content={content} />
+              </div>
+            </>
+          )}
+          
+          <div className="flex gap-3 mt-4">
             {hasText && (
-              <>
-                <div className="text-gray-500 dark:text-zinc-500 text-sm">Answer</div>
-                <div className="text-gray-900 dark:text-white">
-                  <ChatView content={parsedContent} />
-                </div>
-              </>
-            )}
-            {hasLinks && typeof content !== 'string' && (
-              <LinkPreview links={content.links} />
-            )}
-            {hasImages && (
-              <>
-                <div className="text-gray-500 dark:text-zinc-500 text-sm">Generated Images</div>
-                <div className="text-gray-900 dark:text-white">
-                  <ChatView content={content} />
-                </div>
-              </>
-            )}
-            <div className="flex gap-3 mt-4">
-              {hasText && (
-                <button 
-                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors group"
-                  onClick={() => copyToClipboard(parsedContent.text)}
-                >
-                  <Copy size={20} className="text-gray-400 dark:text-zinc-400 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" />
-                </button>
-              )}
-              <button className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors group">
-                <Share size={20} className="text-gray-400 dark:text-zinc-400" />
-              </button>
               <button 
                 className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors group"
-                onClick={onRegenerate}  
+                onClick={() => copyToClipboard(parsedContent.text)}
               >
-                <RotateCcw size={20} className="text-gray-400 dark:text-zinc-400 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" />
+                <Copy size={20} className="text-gray-400 dark:text-zinc-400 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" />
               </button>
-              <button className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors group">
-                <ThumbsUp size={20} className="text-gray-400 dark:text-zinc-400" />
-              </button>
-              <button className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors group">
-                <ThumbsDown size={20} className="text-gray-400 dark:text-zinc-400" />
-              </button>
-            </div>
+            )}
+            <button className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors group">
+              <Share size={20} className="text-gray-400 dark:text-zinc-400" />
+            </button>
+            <button 
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors group"
+              onClick={onRegenerate}  
+            >
+              <RotateCcw size={20} className="text-gray-400 dark:text-zinc-400 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" />
+            </button>
+            <button className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors group">
+              <ThumbsUp size={20} className="text-gray-400 dark:text-zinc-400" />
+            </button>
+            <button className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors group">
+              <ThumbsDown size={20} className="text-gray-400 dark:text-zinc-400" />
+            </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
-  );
+  </div>
+);
 }

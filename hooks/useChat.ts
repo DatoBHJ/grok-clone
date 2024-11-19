@@ -81,6 +81,10 @@ export function useChat(options: UseChatOptions = {}) {
   const createEnhancedPrompt = async (userMessage: string, functionResult: any | null) => {
     let enhancedPrompt = userMessage;
     let links = [];
+    let twitterLinks = [];
+    let otherLinks = [];
+    let twitterLinkCount = 1;
+    let otherLinkCount = 1;
   
     const youtubeUrlMatch = userMessage.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
     
@@ -99,87 +103,93 @@ export function useChat(options: UseChatOptions = {}) {
         case 'stock_info':
           enhancedPrompt += `\n\nStock Information:\nTicker: ${functionResult.data}\n\nRecent tweets about this stock:\n${functionResult.tweets
             .slice(0, config.numberOfTweetToScan)
-            .map((tweet: any) => `- ${tweet.title}\n  ${tweet.snippet} (${tweet.date}) (${tweet.link})`)
+            .map((tweet: any) => `- [Tweet ${twitterLinkCount++}] ${tweet.title}\n  ${tweet.snippet} (${tweet.date}) (${tweet.link})`)
             .join('\n')}`
           
           enhancedPrompt += `\n\nRecent news about this stock:\n${functionResult.news
             .slice(0, config.numberOfPagesToScan)
-            .map((item: any) => `- ${item.title}: ${item.snippet} (${item.date}) (${item.link})`)
+            .map((item: any) => `- [Link ${otherLinkCount++}] ${item.title}: ${item.snippet} (${item.date}) (${item.link})`)
             .join('\n')}`
           
-          links = [
-            ...functionResult.tweets.slice(0, config.numberOfTweetToScan).map((tweet: any) => ({
-              url: tweet.link,
-              title: tweet.title,
-              description: tweet.snippet,
-              date: tweet.date,
-              domain: 'twitter.com'
-            })),
-            ...functionResult.news.slice(0, config.numberOfPagesToScan).map((item: any) => ({
-              url: item.link,
-              title: item.title,
-              description: item.snippet,
-              date: item.date,
-              domain: new URL(item.link).hostname
-            }))
-          ]
-          break
+          twitterLinks = functionResult.tweets.slice(0, config.numberOfTweetToScan).map((tweet: any, index: number) => ({
+            number: index + 1,
+            url: tweet.link,
+            title: tweet.title,
+            description: tweet.snippet,
+            date: tweet.date,
+            domain: 'twitter.com'
+          }));
+
+          otherLinks = functionResult.news.slice(0, config.numberOfPagesToScan).map((item: any, index: number) => ({
+            number: index + 1,
+            url: item.link,
+            title: item.title,
+            description: item.snippet,
+            date: item.date,
+            domain: new URL(item.link).hostname
+          }));
+          break;
       
         case 'news_and_tweets':
           enhancedPrompt += `\n\nRecent tweets:\n${functionResult.tweets
             .slice(0, config.numberOfTweetToScan)
-            .map((tweet: any) => `- ${tweet.title}\n  ${tweet.snippet} (${tweet.date}) (${tweet.link})`)
+            .map((tweet: any) => `- [Tweet ${twitterLinkCount++}] ${tweet.title}\n  ${tweet.snippet} (${tweet.date}) (${tweet.link})`)
             .join('\n')}`
           
           enhancedPrompt += `\n\nRecent news context:\n${functionResult.news
             .slice(0, config.numberOfPagesToScan)
-            .map((item: any) => `- ${item.title}: ${item.snippet} (${item.date}) (${item.link})`)
+            .map((item: any) => `- [Link ${otherLinkCount++}] ${item.title}: ${item.snippet} (${item.date}) (${item.link})`)
             .join('\n')}`
           
-          links = [
-            ...functionResult.tweets.slice(0, config.numberOfTweetToScan).map((tweet: any) => ({
-              url: tweet.link,
-              title: tweet.title,
-              description: tweet.snippet,
-              date: tweet.date,
-              domain: 'twitter.com'
-            })),
-            ...functionResult.news.slice(0, config.numberOfPagesToScan).map((item: any) => ({
-              url: item.link,
-              title: item.title,
-              description: item.snippet,
-              date: item.date,
-              domain: new URL(item.link).hostname
-            }))
-          ]
-          break
+          twitterLinks = functionResult.tweets.slice(0, config.numberOfTweetToScan).map((tweet: any, index: number) => ({
+            number: index + 1,
+            url: tweet.link,
+            title: tweet.title,
+            description: tweet.snippet,
+            date: tweet.date,
+            domain: 'twitter.com'
+          }));
+
+          otherLinks = functionResult.news.slice(0, config.numberOfPagesToScan).map((item: any, index: number) => ({
+            number: index + 1,
+            url: item.link,
+            title: item.title,
+            description: item.snippet,
+            date: item.date,
+            domain: new URL(item.link).hostname
+          }));
+          break;
   
         case 'places':
           enhancedPrompt += `\n\nPlaces context:\n${functionResult.places
             .slice(0, config.numberOfPagesToScan)
-            .map((place: any) => `- ${place.title}: ${place.address}`)
+            .map((place: any) => `- [Link ${otherLinkCount++}] ${place.title}: ${place.address}`)
             .join('\n')}`
-          links = functionResult.places.slice(0, config.numberOfPagesToScan).map((place: any) => ({
+          
+          otherLinks = functionResult.places.slice(0, config.numberOfPagesToScan).map((place: any, index: number) => ({
+            number: index + 1,
             url: `https://maps.google.com/?q=${encodeURIComponent(place.address)}`,
             title: place.title,
             description: place.address,
             domain: 'maps.google.com'
-          }))
-          break
+          }));
+          break;
   
         case 'shopping':
           enhancedPrompt += `\n\nShopping context:\n${functionResult.shopping
             .slice(0, config.numberOfPagesToScan)
-            .map((item: any) => `- ${item.title}: ${item.price}`)
+            .map((item: any) => `- [Link ${otherLinkCount++}] ${item.title}: ${item.price}`)
             .join('\n')}`
-          links = functionResult.shopping.slice(0, config.numberOfPagesToScan).map((item: any) => ({
+          
+          otherLinks = functionResult.shopping.slice(0, config.numberOfPagesToScan).map((item: any, index: number) => ({
+            number: index + 1,
             url: item.link,
             title: item.title,
             description: `${item.price}`,
             image: item.image,
             domain: new URL(item.link).hostname
-          }))
-          break
+          }));
+          break;
   
         case 'youtube_transcript':
           try {
@@ -189,15 +199,17 @@ export function useChat(options: UseChatOptions = {}) {
             console.warn('Failed to fetch video info for transcript:', error);
           }
           
-          enhancedPrompt += `\n\nYouTube Video Transcript:\n${functionResult.transcript}\n\nVideo URL: ${functionResult.url}`
-          links = [{
+          enhancedPrompt += `\n\nYouTube Video Transcript:\n${functionResult.transcript}\n\nVideo URL: [Link ${otherLinkCount++}] ${functionResult.url}`
+          otherLinks = [{
+            number: 1,
             url: functionResult.url,
             domain: 'youtube.com'
-          }]
-          break
+          }];
+          break;
       }
     }
   
+    links = [...twitterLinks, ...otherLinks];
     return { enhancedPrompt, links }
   }
 

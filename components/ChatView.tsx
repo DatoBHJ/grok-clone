@@ -41,8 +41,8 @@ const PROSE_STYLES = {
     button: "text-white text-sm bg-black/50 px-4 py-2 rounded-full hover:bg-black/70 transition-colors"
   },
   links: {
-    twitter: "text-blue-500 hover:underline dark:text-blue-400 text-lg",
-    regular: "text-red-600 hover:underline dark:text-red-400 text-lg", 
+    twitter: "text-blue-500 underline italic dark:text-blue-400 text-lg font-bold",
+    regular: "text-red-600 underline italic dark:text-red-400 text-lg font-bold", 
     citation: "text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 cursor-pointer",
   },
 } as const;
@@ -124,41 +124,65 @@ const ChatView: React.FC<ChatViewProps> = ({ content }) => {
         {children}
       </h3>
     ),
+    // a: ({ href, children }) => {
+    //   // Check if this is a citation link (matches [[number]](link) pattern)
+    //   const isCitation = typeof children === 'string' && /^\[\d+\]$/.test(children);
+      
+    //   if (isCitation) {
+    //     return (
+    //       <a 
+    //         href={href} 
+    //         target="_blank" 
+    //         rel="noopener noreferrer"
+    //         className={PROSE_STYLES.links.citation}
+    //       >
+    //         {children}
+    //       </a>
+    //     );
+    //   }
+      
+    //   // Determine link style based on URL
+    //   const linkClassName = isTwitterLink(href) 
+    //     ? PROSE_STYLES.links.twitter 
+    //     : PROSE_STYLES.links.regular;
+      
+    //   return (
+    //     <a 
+    //       href={href} 
+    //       target="_blank" 
+    //       rel="noopener noreferrer"
+    //       className={linkClassName}
+    //     >
+    //       {children}
+    //       {isTwitterLink(href) && ' 𝕏'} 
+    //     </a>
+    //   );
+    // },
     a: ({ href, children }) => {
-      // Check if this is a citation link (matches [[number]](link) pattern)
-      const isCitation = typeof children === 'string' && /^\[\d+\]$/.test(children);
-      
-      if (isCitation) {
-        return (
-          <a 
-            href={href} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className={PROSE_STYLES.links.citation}
-          >
-            {children}
-          </a>
-        );
-      }
-      
-      // Determine link style based on URL
       const linkClassName = isTwitterLink(href) 
         ? PROSE_STYLES.links.twitter 
         : PROSE_STYLES.links.regular;
       
       return (
-        <a 
-          href={href} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className={linkClassName}
-        >
-          {children}
-          {isTwitterLink(href) && ' 𝕏'} 
-        </a>
+        <span className="inline-flex items-center gap-1">
+          <a 
+            href={href} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className={linkClassName}
+          >
+            {children}
+          </a>
+          {href && (
+            <img 
+              src={`https://www.google.com/s2/favicons?domain=${new URL(href).hostname}`}
+              alt=""
+              className="w-4 h-4 rounded-full"  
+              />
+          )}
+        </span>
       );
     },
-
     p: ({ children }) => {
       if (typeof children === 'string' && children.match(/^={3,}$/)) {
         return <hr className="border-t border-gray-300 dark:border-gray-700 mt-2 mb-4 px-2" />;
