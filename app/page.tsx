@@ -114,7 +114,7 @@ const Header = ({ onBack }: { onBack: () => void }) => (
           <div className="flex items-center gap-2">
             <h1 className="text-base font-semibold text-black dark:text-white">Groc 2</h1>
           </div>
-          <span className="px-2 py-0.5 text-xs bg-blue-800/50 text-blue-500 rounded-md font-semibold">beta</span>
+          <span className="px-2 py-0.5 text-xs bg-sky-100 text-sky-500  dark:bg-blue-800/50 dark:text-blue-500 rounded-md font-bold">beta</span>
         </div>
         
         <button className="p-2 hover:bg-card rounded-lg transition-colors">
@@ -223,13 +223,13 @@ export default function Home() {
     <div className="min-h-screen bg-background text-foreground">
       <main className="max-w-3xl mx-auto p-4">
         <div className="mb-16 mt-8">
-          <h1 className="text-4xl font-medium text-center mb-8 text-black dark:text-white">Groc</h1>
+          <h1 className="text-4xl font-medium text-center mb-8 text-black dark:text-white">Groc lol</h1>
           <div className="relative">
           <input
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder={selectedImage ? "Ask about this image" : "Ask anything"}
+            placeholder={selectedImage ? "Ask bout this pic" : "Sup, ask anything"}
             className="w-full p-4 pl-14 pr-12 bg-input rounded-full text-black dark:text-white placeholder-inputtext focus:outline-none"
             onKeyPress={(e) => e.key === 'Enter' && handleStartChat()}
           />
@@ -275,18 +275,19 @@ export default function Home() {
           </p> */}
 
           <p className="text-center dark:text-zinc-700 text-slate-300 text-sm font-medium mt-2">
-          Groc is an open source clone of xAI&apos;s Grok.<br />
-          Important: Groc is 100% unaffiliated with xAI.
+          Groc is like xAI's Grok, but way more chill.
+          <br />
+          Important: Groc is 100% unaffiliated with xAI. 
           </p>
 
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <SuggestionCard 
-            icon="✍️"
-            title="Help me write a cover letter"
-            onClick={handleSuggestionClick}
-          />
+              icon="📰"
+              title="Tell me today's headlines"
+              onClick={handleSuggestionClick}
+            />
           <SuggestionCard 
             icon="🎮"
             title="Recommend a fantasy RPG game"
@@ -298,8 +299,8 @@ export default function Home() {
             onClick={handleSuggestionClick}
           />
           <SuggestionCard 
-            icon="📰"
-            title="Tell me today's headlines"
+            icon="✍️"
+            title="Help me write a cover letter"
             onClick={handleSuggestionClick}
           />
         </div>
