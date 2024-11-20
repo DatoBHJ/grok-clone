@@ -103,12 +103,12 @@ export function useChat(options: UseChatOptions = {}) {
         case 'stock_info':
           enhancedPrompt += `\n\nStock Information:\nTicker: ${functionResult.data}\n\nRecent tweets about this stock:\n${functionResult.tweets
             .slice(0, config.numberOfTweetToScan)
-            .map((tweet: any) => `- [Tweet ${twitterLinkCount++}] ${tweet.title}\n  ${tweet.snippet} (${tweet.date}) (${tweet.link})`)
+            .map((tweet: any) => `- [${twitterLinkCount++}] ${tweet.title}\n  ${tweet.snippet} (${tweet.date}) (${tweet.link})`)
             .join('\n')}`
           
           enhancedPrompt += `\n\nRecent news about this stock:\n${functionResult.news
             .slice(0, config.numberOfPagesToScan)
-            .map((item: any) => `- [Link ${otherLinkCount++}] ${item.title}: ${item.snippet} (${item.date}) (${item.link})`)
+            .map((item: any) => `- [${otherLinkCount++}] ${item.title}: ${item.snippet} (${item.date}) (${item.link})`)
             .join('\n')}`
           
           twitterLinks = functionResult.tweets.slice(0, config.numberOfTweetToScan).map((tweet: any, index: number) => ({
@@ -133,12 +133,12 @@ export function useChat(options: UseChatOptions = {}) {
         case 'news_and_tweets':
           enhancedPrompt += `\n\nRecent tweets:\n${functionResult.tweets
             .slice(0, config.numberOfTweetToScan)
-            .map((tweet: any) => `- [Tweet ${twitterLinkCount++}] ${tweet.title}\n  ${tweet.snippet} (${tweet.date}) (${tweet.link})`)
+            .map((tweet: any) => `- [${twitterLinkCount++}] ${tweet.title}\n  ${tweet.snippet} (${tweet.date}) (${tweet.link})`)
             .join('\n')}`
           
           enhancedPrompt += `\n\nRecent news context:\n${functionResult.news
             .slice(0, config.numberOfPagesToScan)
-            .map((item: any) => `- [Link ${otherLinkCount++}] ${item.title}: ${item.snippet} (${item.date}) (${item.link})`)
+            .map((item: any) => `- [${otherLinkCount++}] ${item.title}: ${item.snippet} (${item.date}) (${item.link})`)
             .join('\n')}`
           
           twitterLinks = functionResult.tweets.slice(0, config.numberOfTweetToScan).map((tweet: any, index: number) => ({
@@ -163,7 +163,7 @@ export function useChat(options: UseChatOptions = {}) {
         case 'places':
           enhancedPrompt += `\n\nPlaces context:\n${functionResult.places
             .slice(0, config.numberOfPagesToScan)
-            .map((place: any) => `- [Link ${otherLinkCount++}] ${place.title}: ${place.address}`)
+            .map((place: any) => `- [${otherLinkCount++}] ${place.title}: ${place.address}`)
             .join('\n')}`
           
           otherLinks = functionResult.places.slice(0, config.numberOfPagesToScan).map((place: any, index: number) => ({
@@ -178,7 +178,7 @@ export function useChat(options: UseChatOptions = {}) {
         case 'shopping':
           enhancedPrompt += `\n\nShopping context:\n${functionResult.shopping
             .slice(0, config.numberOfPagesToScan)
-            .map((item: any) => `- [Link ${otherLinkCount++}] ${item.title}: ${item.price}`)
+            .map((item: any) => `- [${otherLinkCount++}] ${item.title}: ${item.price}`)
             .join('\n')}`
           
           otherLinks = functionResult.shopping.slice(0, config.numberOfPagesToScan).map((item: any, index: number) => ({

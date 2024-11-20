@@ -84,6 +84,22 @@ export function Chat({
     return typeof content === 'string' ? content : content.text;
   };
 
+
+  const getValidUrl = (href: string): string | null => {
+    try {
+      if (href.startsWith('/')) {
+        return window.location.origin + href;
+      }
+      if (!href.startsWith('http://') && !href.startsWith('https://')) {
+        href = 'https://' + href;
+      }
+      const url = new URL(href);
+      return url.hostname;
+    } catch {
+      return null;
+    }
+  };
+  
   return (
     <>
           {rateLimitError && <RateLimit />}

@@ -5,6 +5,7 @@ import { Share, SendHorizontal, Image, ArrowLeft, X } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Chat } from '@/components/Chat';
 import { useChat } from '@/hooks/useChat';
+import { IconGamepad, IconNewspaper, IconCode, IconYoutube } from '../components/ui/icons';
 
 import {
   Tooltip,
@@ -38,14 +39,15 @@ const SuggestionCard = ({
     className="bg-card hover:bg-card/80 transition-colors cursor-pointer border-0"
     onClick={() => onClick(title)}
   >
-    <CardContent className="p-4">
-      <div className="flex flex-col gap-2">
-        <span className="text-2xl">{icon}</span>
-        <span className="text-sm text-card-foreground">{title}</span>
+    <CardContent className="flex flex-col h-full p-4">
+      <h3 className="text-base text-card-foreground mb-14 flex-grow">{title}</h3>
+      <div className=" text-blue-400">
+        {icon}
       </div>
     </CardContent>
   </Card>
 );
+
 
 const ImageCard = ({ 
   title, 
@@ -77,7 +79,7 @@ const NewsCard = ({ title, meta }: { title: string; meta: string }) => (
     <Tooltip>
       <TooltipTrigger asChild>
         <Card className="relative bg-card hover:bg-card/80 transition-colors cursor-pointer border-0 group">
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div className="flex-1">
                 <h3 className="text-card-foreground text-base mb-2">{title}</h3>
@@ -284,24 +286,24 @@ export default function Home() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <SuggestionCard 
-              icon="📰"
-              title="Tell me today's headlines"
-              onClick={handleSuggestionClick}
-            />
+            icon={<IconNewspaper className="w-5 h-5" />}
+            title="Tell me today's headlines"
+            onClick={handleSuggestionClick}
+          />
           <SuggestionCard 
-            icon="🎮"
+            icon={<IconGamepad className="w-5 h-5" />}
             title="Recommend a fantasy RPG game"
             onClick={handleSuggestionClick}
           />
           <SuggestionCard 
-            icon="</>"
+            icon={<IconCode className="w-5 h-5" />}
             title="Solve the Two Sum problem in Python"
             onClick={handleSuggestionClick}
           />
           <SuggestionCard 
-            icon="✍️"
-            title="Help me write a cover letter"
-            onClick={handleSuggestionClick}
+            icon={<IconYoutube className="w-5 h-5" />}
+            title="Summarize this YouTube video"
+            onClick={() => handleSuggestionClick("Summarize this video: youtu.be/z19HM7ANZlo")}
           />
         </div>
 

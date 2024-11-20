@@ -63,8 +63,13 @@ export function ChatMessage({
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
           >
-            <div className="w-8 h-8 rounded-full bg-blue-500 flex-shrink-0" />
-            <div className="text-gray-900 dark:text-white text-lg flex flex-col gap-2 max-w-[calc(100%-4rem)]">
+<div className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden">
+              <img 
+                src="/kingbob.png"
+                alt="Profile" 
+                className="w-full h-full object-cover"
+              />
+            </div>            <div className="text-gray-900 dark:text-white text-lg flex flex-col gap-2 max-w-[calc(100%-4rem)]">
               <div className="flex items-start gap-2">
                 <div className="flex-grow">
                   {/* Show image if exists */}
