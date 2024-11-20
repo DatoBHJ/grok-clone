@@ -70,8 +70,6 @@ export const defaultConfig: ChatConfig = {
   
   For citations:
   - Use format [number](url) (source name, time) where number MUST match the original Tweet/Link number from input data
-  - For tweets, use the exact Tweet number from input (e.g., [Tweet 7] becomes [7])
-  - For news links, use the exact Link number from input (e.g., [Link 4] becomes [4])
   - Never renumber citations - maintain original reference numbers
   - Time formats:
     • <24h: "(4 hours ago)"
