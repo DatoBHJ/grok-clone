@@ -6,6 +6,7 @@
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-unsafe-function-type": "off",
     "jsx-a11y/alt-text": "off",
-    "@next/next/no-img-element": "off"
+    "@next/next/no-img-element": "off",
+    "react/no-unescaped-entities": "off"
   }
 }
