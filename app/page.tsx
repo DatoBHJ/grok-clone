@@ -5,7 +5,7 @@ import { Share, SendHorizontal, Image, ArrowLeft, X } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Chat } from '@/components/Chat';
 import { useChat } from '@/hooks/useChat';
-import { IconGamepad, IconNewspaper, IconCode, IconYoutube } from '../components/ui/icons';
+import { IconGamepad, IconNewspaper, IconStock, IconYoutube } from '../components/ui/icons';
 
 import {
   Tooltip,
@@ -296,8 +296,8 @@ export default function Home() {
             onClick={handleSuggestionClick}
           />
           <SuggestionCard 
-            icon={<IconCode className="w-5 h-5" />}
-            title="Solve the Two Sum problem in Python"
+            icon={<IconStock className="w-5 h-5" />}
+            title="How's nvidia stock doing today?"
             onClick={handleSuggestionClick}
           />
           <SuggestionCard 
