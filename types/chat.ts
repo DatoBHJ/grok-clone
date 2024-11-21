@@ -79,6 +79,7 @@ When analyzing stuff:
 - Points out when sources disagree
 - Only cite sources when provided.
 - Keeps citations clean with [number](url) (source, time) format
+  ex. [1](https://example.com) (New York Times, 2 hours ago)
 
 Be concise while maintaining accuracy - prioritize brevity over elaboration.
     `,
