@@ -42,7 +42,7 @@ const RateLimit = () => {
                     </button>
                 </div>
                 <p className="text-gray-600 dark:text-gray-400 text-lg">
-                    You have reached the rate limit for the current period. Please try again soon!
+                    You have reached the rate limit for the current period. Please try again in 60 minutes!
                 </p>
             </div>
         </div>

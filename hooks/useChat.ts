@@ -5,7 +5,6 @@ import { functionCalling } from '@/app/function-calling'
 import { config } from '@/app/config'
 import { fetchVideoInfo } from '@/lib/fetchinfo'
 
-
 interface UseChatOptions {
   systemPrompt?: string
   parameters?: Partial<ChatParameters>
@@ -16,7 +15,7 @@ export function useChat(options: UseChatOptions = {}) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [partialResponse, setPartialResponse] = useState('')
-  const [rateLimitError, setRateLimitError] = useState<boolean>(false);
+  const [rateLimitError, setRateLimitError] = useState<boolean>(false)
 
   const { 
     systemPrompt = defaultConfig.systemPrompt, 
@@ -24,14 +23,12 @@ export function useChat(options: UseChatOptions = {}) {
   } = options
 
   const getConversationContext = (messages: Message[]): Message[] => {
-    // Get last 4 messages (2 pairs of user-assistant interactions)
-    const recentMessages = messages.slice(-4);
+    const recentMessages = messages.slice(-4)
     return recentMessages.map(msg => ({
       role: msg.role as Role,  
       content: typeof msg.content === 'string' ? msg.content : msg.content.text
-    }));
-  };
-  
+    }))
+  }
 
   const processStreamResponse = async (reader: ReadableStreamDefaultReader<Uint8Array>) => {
     const decoder = new TextDecoder()
@@ -78,143 +75,143 @@ export function useChat(options: UseChatOptions = {}) {
     setPartialResponse('')
   }
 
+  const processLinks = (functionResult: any) => {
+    let links = []
+    let twitterLinks = []
+    let otherLinks = []
+
+    if (!functionResult) return { links: [], enhancedPrompt: '' }
+
+    switch (functionResult.type) {
+      case 'stock_info':
+      case 'news_and_tweets':
+        twitterLinks = functionResult.tweets?.slice(0, config.numberOfTweetToScan).map((tweet: any, index: number) => ({
+          number: index + 1,
+          url: tweet.link,
+          title: tweet.title,
+          description: tweet.snippet,
+          date: tweet.date || '',
+          imageUrl: tweet.imageUrl || '',
+          domain: 'twitter.com'
+        })) || []
+
+        otherLinks = functionResult.news?.slice(0, config.numberOfPagesToScan).map((item: any, index: number) => ({
+          number: index + 1,
+          url: item.link,
+          title: item.title,
+          description: item.snippet,
+          date: item.date || '',
+          imageUrl: item.imageUrl || '',
+          domain: new URL(item.link).hostname
+        })) || []
+        break
+
+      case 'places':
+        otherLinks = functionResult.places?.slice(0, config.numberOfPagesToScan).map((place: any, index: number) => ({
+          number: index + 1,
+          url: `https://maps.google.com/?q=${encodeURIComponent(place.address)}`,
+          title: place.title,
+          description: place.address,
+          domain: 'maps.google.com'
+        })) || []
+        break
+
+      case 'shopping':
+        otherLinks = functionResult.shopping?.slice(0, config.numberOfPagesToScan).map((item: any, index: number) => ({
+          number: index + 1,
+          url: item.link,
+          title: item.title,
+          description: `${item.price}`,
+          image: item.image,
+          domain: new URL(item.link).hostname
+        })) || []
+        break
+
+      case 'youtube_transcript':
+        otherLinks = [{
+          number: 1,
+          url: functionResult.url,
+          domain: 'youtube.com'
+        }]
+        break
+    }
+
+    links = [...twitterLinks, ...otherLinks]
+    return { links, enhancedPrompt: '' } // enhancedPrompt will be created separately
+  }
+
   const createEnhancedPrompt = async (userMessage: string, functionResult: any | null) => {
-    let enhancedPrompt = userMessage;
-    let links = [];
-    let twitterLinks = [];
-    let otherLinks = [];
-    let twitterLinkCount = 1;
-    let otherLinkCount = 1;
-  
-    const youtubeUrlMatch = userMessage.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    let enhancedPrompt = userMessage
+
+    const youtubeUrlMatch = userMessage.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
     
     if (youtubeUrlMatch) {
-      const videoId = youtubeUrlMatch[1];
+      const videoId = youtubeUrlMatch[1]
       try {
-        const videoInfo = await fetchVideoInfo(videoId);
-        enhancedPrompt += `\n\nYouTube Video Information:\nTitle: ${videoInfo.title}\nAuthor: ${videoInfo.author}\n`;
+        const videoInfo = await fetchVideoInfo(videoId)
+        enhancedPrompt += `\n\nYouTube Video Information:\nTitle: ${videoInfo.title}\nAuthor: ${videoInfo.author}\n`
       } catch (error) {
-        console.warn('Failed to fetch video info:', error);
+        console.warn('Failed to fetch video info:', error)
       }
     }
   
     if (functionResult) {
+      let twitterLinkCount = 1
+      let otherLinkCount = 1
+
       switch (functionResult.type) {
         case 'stock_info':
           enhancedPrompt += `\n\nStock Information:\nTicker: ${functionResult.data}\n\nRecent tweets about this stock:\n${functionResult.tweets
-            .slice(0, config.numberOfTweetToScan)
+            ?.slice(0, config.numberOfTweetToScan)
             .map((tweet: any) => `- [${twitterLinkCount++}] ${tweet.title}\n  ${tweet.snippet} (${tweet.date || ''}) (${tweet.link})`)
             .join('\n')}`
           
           enhancedPrompt += `\n\nRecent news about this stock:\n${functionResult.news
-            .slice(0, config.numberOfPagesToScan)
+            ?.slice(0, config.numberOfPagesToScan)
             .map((item: any) => `- [${otherLinkCount++}] ${item.title}: ${item.snippet} (${item.date || ''}) (${item.link})`)
             .join('\n')}`
-          
-          twitterLinks = functionResult.tweets.slice(0, config.numberOfTweetToScan).map((tweet: any, index: number) => ({
-            number: index + 1,
-            url: tweet.link,
-            title: tweet.title,
-            description: tweet.snippet,
-            date: tweet.date || '',
-            imageUrl: tweet.imageUrl || '',
-            domain: 'twitter.com'
-          }));
-
-          otherLinks = functionResult.news.slice(0, config.numberOfPagesToScan).map((item: any, index: number) => ({
-            number: index + 1,
-            url: item.link,
-            title: item.title,
-            description: item.snippet,
-            date: item.date || '',
-            imageUrl: item.imageUrl || '',
-            domain: new URL(item.link).hostname
-          }));
-          break;
+          break
       
         case 'news_and_tweets':
           enhancedPrompt += `\n\nRecent tweets:\n${functionResult.tweets
-            .slice(0, config.numberOfTweetToScan)
+            ?.slice(0, config.numberOfTweetToScan)
             .map((tweet: any) => `- [${twitterLinkCount++}] ${tweet.title}\n  ${tweet.snippet} (${tweet.date || ''}) (${tweet.link})`)
             .join('\n')}`
           
           enhancedPrompt += `\n\nRecent news context:\n${functionResult.news
-            .slice(0, config.numberOfPagesToScan)
+            ?.slice(0, config.numberOfPagesToScan)
             .map((item: any) => `- [${otherLinkCount++}] ${item.title}: ${item.snippet} (${item.date || ''}) (${item.link})`)
             .join('\n')}`
-          
-          twitterLinks = functionResult.tweets.slice(0, config.numberOfTweetToScan).map((tweet: any, index: number) => ({
-            number: index + 1,
-            url: tweet.link,
-            title: tweet.title,
-            description: tweet.snippet,
-            date: tweet.date || '',
-            imageUrl: tweet.imageUrl || '',
-            domain: 'twitter.com'
-          }));
-
-          otherLinks = functionResult.news.slice(0, config.numberOfPagesToScan).map((item: any, index: number) => ({
-            number: index + 1,
-            url: item.link,
-            title: item.title,
-            description: item.snippet,
-            date: item.date || '',
-            imageUrl: item.imageUrl || '',
-            domain: new URL(item.link).hostname
-          }));
-          break;
+          break
   
         case 'places':
           enhancedPrompt += `\n\nPlaces context:\n${functionResult.places
-            .slice(0, config.numberOfPagesToScan)
+            ?.slice(0, config.numberOfPagesToScan)
             .map((place: any) => `- [${otherLinkCount++}] ${place.title}: ${place.address}`)
             .join('\n')}`
-          
-          otherLinks = functionResult.places.slice(0, config.numberOfPagesToScan).map((place: any, index: number) => ({
-            number: index + 1,
-            url: `https://maps.google.com/?q=${encodeURIComponent(place.address)}`,
-            title: place.title,
-            description: place.address,
-            domain: 'maps.google.com'
-          }));
-          break;
+          break
   
         case 'shopping':
           enhancedPrompt += `\n\nShopping context:\n${functionResult.shopping
-            .slice(0, config.numberOfPagesToScan)
+            ?.slice(0, config.numberOfPagesToScan)
             .map((item: any) => `- [${otherLinkCount++}] ${item.title}: ${item.price}`)
             .join('\n')}`
-          
-          otherLinks = functionResult.shopping.slice(0, config.numberOfPagesToScan).map((item: any, index: number) => ({
-            number: index + 1,
-            url: item.link,
-            title: item.title,
-            description: `${item.price}`,
-            image: item.image,
-            domain: new URL(item.link).hostname
-          }));
-          break;
+          break
   
         case 'youtube_transcript':
           try {
-            const videoInfo = await fetchVideoInfo(new URL(functionResult.url).searchParams.get('v') || '');
-            enhancedPrompt += `\n\nYouTube Video Information:\nTitle: ${videoInfo.title}\nAuthor: ${videoInfo.author}\n`;
+            const videoInfo = await fetchVideoInfo(new URL(functionResult.url).searchParams.get('v') || '')
+            enhancedPrompt += `\n\nYouTube Video Information:\nTitle: ${videoInfo.title}\nAuthor: ${videoInfo.author}\n`
           } catch (error) {
-            console.warn('Failed to fetch video info for transcript:', error);
+            console.warn('Failed to fetch video info for transcript:', error)
           }
           
           enhancedPrompt += `\n\nYouTube Video Transcript:\n${functionResult.transcript}\n\nVideo URL: [Link ${otherLinkCount++}] ${functionResult.url}`
-          otherLinks = [{
-            number: 1,
-            url: functionResult.url,
-            domain: 'youtube.com'
-          }];
-          break;
+          break
       }
     }
   
-    links = [...twitterLinks, ...otherLinks];
-    return { enhancedPrompt, links }
+    return enhancedPrompt
   }
 
   const processImageChat = async (image: string, prompt: string = "What's in this image?") => {
@@ -277,343 +274,372 @@ export function useChat(options: UseChatOptions = {}) {
     const userMessage: Message = {
       role: 'user',
       content: userInput
-    };
-    setMessages(prev => [...prev, userMessage]);
+    }
+    setMessages(prev => [...prev, userMessage])
     
-    setIsLoading(true);
-    setError(null);
-    setPartialResponse('');
+    setIsLoading(true)
+    setError(null)
+    setPartialResponse('')
   
     try {
-      // Rate limit check remains the same
       const rateLimitResponse = await fetch('/api/rate-limit', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         }
-      });
+      })
   
       if (!rateLimitResponse.ok) {
         if (rateLimitResponse.status === 429) {
-          setRateLimitError(true);
-          throw new Error('Rate limit exceeded');
+          setRateLimitError(true)
+          throw new Error('Rate limit exceeded')
         }
-        throw new Error(`Rate limit check failed: ${rateLimitResponse.statusText}`);
+        throw new Error(`Rate limit check failed: ${rateLimitResponse.statusText}`)
       }
 
-      // Image chat handling remains the same
-      let isImageChat = false;
-      let imageData = '';
-      let imagePrompt = '';
-  
-      try {
-        const parsed = JSON.parse(userInput);
-        if (parsed.type === 'image') {
-          isImageChat = true;
-          imageData = parsed.image;
-          imagePrompt = parsed.prompt;
-        }
-      } catch {
-        isImageChat = userInput.includes('data:image');
-        if (isImageChat) {
-          imageData = userInput;
-          imagePrompt = "What's in this image?";
-        }
+       // Image chat handling
+    let isImageChat = false
+    let imageData = ''
+    let imagePrompt = ''
+
+    try {
+      const parsed = JSON.parse(userInput)
+      if (parsed.type === 'image') {
+        isImageChat = true
+        imageData = parsed.image
+        imagePrompt = parsed.prompt
       }
-      
+    } catch {
+      isImageChat = userInput.includes('data:image')
       if (isImageChat) {
-        const imageResponse = await processImageChat(imageData, imagePrompt);
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: {
-            text: imageResponse,
-          }
-        }]);
-        return;
+        imageData = userInput
+        imagePrompt = "What's in this image?"
       }
-
-      // Pass the last 2 pairs of conversation context to function calling
-      const conversationContext = getConversationContext([...messages, userMessage]);
-      const functionResult = await functionCalling(conversationContext);
-      
-      
-      if (functionResult?.type === 'image_url') {
-        const imgResult = functionResult as any;
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: {
-            text: '', 
-            images: imgResult.images
-          }
-        }]);
-        return;
-      }
-      
-      const { enhancedPrompt, links } = await createEnhancedPrompt(userInput, functionResult);
-      const chatMessages = createChatMessages(enhancedPrompt, systemPrompt, messages);
-      
-      const response = await sendChatRequest(chatMessages);
-      const reader = response.body?.getReader();
-  
-      if (!reader) {
-        throw new Error('No reader available');
-      }
-  
-      const accumulatedResponse = await processStreamResponse(reader);
-  
-      if (accumulatedResponse) {
-        const messageContent: MessageContent = {
-          text: accumulatedResponse
-        }
-        if (links && links.length > 0) {
-          messageContent.links = links;
-        }
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: messageContent
-        }]);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send message');
-    } finally {
-      setIsLoading(false);
-      setPartialResponse('');
     }
-  }, [messages, systemPrompt, parameters]);
-
-  const editMessage = useCallback(async (index: number, newUserInput: string) => {
-    try {
-      // Rate limit check remains the same
-      const rateLimitResponse = await fetch('/api/rate-limit', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
+    
+    if (isImageChat) {
+      const imageResponse = await processImageChat(imageData, imagePrompt)
+      // 새로운 assistant 메시지를 항상 추가
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: {
+          text: imageResponse,
         }
-      });
+      }])
+      return
+    }
 
-      if (!rateLimitResponse.ok) {
-        if (rateLimitResponse.status === 429) {
-          setRateLimitError(true);
-          throw new Error('Rate limit exceeded');
+    // Regular chat handling
+    const conversationContext = getConversationContext([...messages, userMessage])
+    const functionResult = await functionCalling(conversationContext)
+    
+    if (functionResult?.type === 'image_url') {
+      const imgResult = functionResult as any
+      // 새로운 assistant 메시지를 항상 추가
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: {
+          text: '', 
+          images: imgResult.images
         }
-        throw new Error(`Rate limit check failed: ${rateLimitResponse.statusText}`);
-      }
-      setIsLoading(true);
-      setError(null);
-      setPartialResponse('');
-      
-      const updatedMessages = [...messages];
-      updatedMessages[index] = {
-        role: 'user',
-        content: newUserInput
-      };
-      setMessages(updatedMessages.slice(0, index + 1));
+      }])
+      return
+    }
 
-      // Image chat handling remains the same
-      let isImageChat = false;
-      let imageData = '';
-      let imagePrompt = '';
-
-      try {
-        const parsed = JSON.parse(newUserInput);
-        if (parsed.type === 'image') {
-          isImageChat = true;
-          imageData = parsed.image;
-          imagePrompt = parsed.prompt;
-        }
-      } catch {
-        isImageChat = newUserInput.includes('data:image');
-        if (isImageChat) {
-          imageData = newUserInput;
-          imagePrompt = "What's in this image?";
-        }
-      }
-
-      if (isImageChat) {
-        const imageResponse = await processImageChat(imageData, imagePrompt);
-        setMessages(prev => [...prev.slice(0, index + 1), {
-          role: 'assistant',
-          content: {
-            text: imageResponse,
-          }
-        }]);
-        return;
-      }
-
-      // Pass the last 2 pairs of conversation context to function calling
-      const conversationContext = getConversationContext(updatedMessages.slice(0, index + 1));
-      const functionResult = await functionCalling(conversationContext);
-      
-      if (functionResult?.type === 'image_url') {
-        const imgResult = functionResult as any;
-        setMessages(prev => [...prev.slice(0, index + 1), {
-          role: 'assistant',
+    // Process links and show immediately
+    const { links } = processLinks(functionResult)
+    let currentMessageId: number | null = null
+    
+    if (links.length > 0) {
+      setMessages(prev => {
+        const newMessages = [...prev, {
+          role: 'assistant' as Role,
           content: {
             text: '',
-            images: imgResult.images
+            links
           }
-        }]);
-        return;
-      }
-
-      const previousMessages = updatedMessages.slice(0, index);
-      const { enhancedPrompt, links } = await createEnhancedPrompt(newUserInput, functionResult);
-      
-      const chatMessages = createChatMessages(
-        enhancedPrompt,
-        systemPrompt,
-        previousMessages
-      );
-
-      const response = await sendChatRequest(chatMessages);
-      const reader = response.body?.getReader();
-
-      if (!reader) {
-        throw new Error('No reader available');
-      }
-
-      const accumulatedResponse = await processStreamResponse(reader);
-
-      if (accumulatedResponse) {
-        const messageContent: MessageContent = {
-          text: accumulatedResponse
-        }
-        if (links && links.length > 0) {
-          messageContent.links = links;
-        }
-        setMessages(prev => [...prev.slice(0, index + 1), {
-          role: 'assistant',
-          content: messageContent
-        }]);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send message');
-    } finally {
-      setIsLoading(false);
-      setPartialResponse('');
+        }]
+        currentMessageId = newMessages.length - 1
+        return newMessages
+      })
     }
-  }, [messages, systemPrompt, parameters]);
+    
+    const enhancedPrompt = await createEnhancedPrompt(userInput, functionResult)
+    const chatMessages = createChatMessages(enhancedPrompt, systemPrompt, messages)
+    
+    const response = await sendChatRequest(chatMessages)
+    const reader = response.body?.getReader()
 
-  const regenerateResponse = useCallback(async (messageIndex: number) => {
+    if (!reader) {
+      throw new Error('No reader available')
+    }
+
+    const accumulatedResponse = await processStreamResponse(reader)
+
+    if (accumulatedResponse) {
+      setMessages(prev => {
+        // 현재 메시지가 links로 시작된 경우
+        if (currentMessageId !== null) {
+          return prev.map((msg, index) => {
+            if (index === currentMessageId) {
+              return {
+                role: 'assistant',
+                content: {
+                  text: accumulatedResponse,
+                  links: (typeof msg.content === 'object' ? msg.content.links : undefined)
+                }
+              }
+            }
+            return msg
+          })
+        } 
+        // links 없이 새로운 메시지 시작한 경우
+        else {
+          return [...prev, {
+            role: 'assistant',
+            content: { text: accumulatedResponse }
+          }]
+        }
+      })
+    }
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Failed to send message')
+  } finally {
+    setIsLoading(false)
+    setPartialResponse('')
+  }
+}, [messages, systemPrompt, parameters])
+
+
+const editMessage = useCallback(async (index: number, newUserInput: string) => {
+  try {
+    setIsLoading(true)
+    setError(null)
+    setPartialResponse('')
+    
+    const updatedMessages = [...messages]
+    updatedMessages[index] = {
+      role: 'user',
+      content: newUserInput
+    }
+    setMessages(updatedMessages.slice(0, index + 1))
+
+    let isImageChat = false
+    let imageData = ''
+    let imagePrompt = ''
+
     try {
-      // Rate limit check remains the same
-      const rateLimitResponse = await fetch('/api/rate-limit', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-  
-      if (!rateLimitResponse.ok) {
-        if (rateLimitResponse.status === 429) {
-          setRateLimitError(true);
-          throw new Error('Rate limit exceeded');
-        }
-        throw new Error(`Rate limit check failed: ${rateLimitResponse.statusText}`);
+      const parsed = JSON.parse(newUserInput)
+      if (parsed.type === 'image') {
+        isImageChat = true
+        imageData = parsed.image
+        imagePrompt = parsed.prompt
       }
-      setIsLoading(true);
-      setError(null);
-      setPartialResponse('');
-      
-      const previousMessages = messages.slice(0, messageIndex);
-      const lastUserMessage = previousMessages
-        .slice()
-        .reverse()
-        .find(msg => msg.role === 'user');
-  
-      if (!lastUserMessage) {
-        throw new Error('No user message found to regenerate response');
-      }
-  
-      const userContent = typeof lastUserMessage.content === 'string' 
-        ? lastUserMessage.content 
-        : lastUserMessage.content.text;
-  
-      setMessages(prev => prev.slice(0, messageIndex));
-
-      // Image chat handling remains the same
-      let isImageChat = false;
-      let imageData = '';
-      let imagePrompt = '';
-  
-      try {
-        const parsed = JSON.parse(userContent);
-        if (parsed.type === 'image') {
-          isImageChat = true;
-          imageData = parsed.image;
-          imagePrompt = parsed.prompt;
-        }
-      } catch {
-        isImageChat = userContent.includes('data:image');
-        if (isImageChat) {
-          imageData = userContent;
-          imagePrompt = "What's in this image?";
-        }
-      }
-  
+    } catch {
+      isImageChat = newUserInput.includes('data:image')
       if (isImageChat) {
-        const imageResponse = await processImageChat(imageData, imagePrompt);
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: {
-            text: imageResponse,
-          }
-        }]);
-        return;
+        imageData = newUserInput
+        imagePrompt = "What's in this image?"
       }
-
-      const conversationContext = getConversationContext(previousMessages);
-      const functionResult = await functionCalling(conversationContext);
-      
-      if (functionResult?.type === 'image_url') {
-        const imgResult = functionResult as any;
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: {
-            text: '',
-            images: imgResult.images
-          }
-        }]);
-        return;
-      }
-
-      const { enhancedPrompt, links } = await createEnhancedPrompt(userContent, functionResult);
-
-      const chatMessages = createChatMessages(
-        enhancedPrompt,
-        systemPrompt,
-        previousMessages.slice(0, -1)
-      );
-
-      const response = await sendChatRequest(chatMessages);
-      const reader = response.body?.getReader();
-
-      if (!reader) {
-        throw new Error('No reader available');
-      }
-
-      const accumulatedResponse = await processStreamResponse(reader);
-
-      if (accumulatedResponse) {
-        const messageContent: MessageContent = {
-          text: accumulatedResponse
-        }
-        if (links && links.length > 0) {
-          messageContent.links = links;
-        }
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: messageContent
-        }]);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send message');
-    } finally {
-      setIsLoading(false);
-      setPartialResponse('');
     }
-  }, [messages, systemPrompt, parameters]);
+    
+    if (isImageChat) {
+      const imageResponse = await processImageChat(imageData, imagePrompt)
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: { text: imageResponse }
+      }])
+      return
+    }
 
+    const conversationContext = getConversationContext(updatedMessages.slice(0, index + 1))
+    const functionResult = await functionCalling(conversationContext)
+    
+    if (functionResult?.type === 'image_url') {
+      const imgResult = functionResult as any
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: {
+          text: '',
+          images: imgResult.images
+        }
+      }])
+      return
+    }
+
+    const { links } = processLinks(functionResult)
+    let currentMessageId: number | null = null
+    
+    if (links.length > 0) {
+      setMessages(prev => {
+        const newMessages = [...prev, {
+          role: 'assistant' as Role,
+          content: { text: '', links }
+        }]
+        currentMessageId = newMessages.length - 1
+        return newMessages
+      })
+    }
+
+    const enhancedPrompt = await createEnhancedPrompt(newUserInput, functionResult)
+    const chatMessages = createChatMessages(enhancedPrompt, systemPrompt, updatedMessages.slice(0, index))
+    
+    const response = await sendChatRequest(chatMessages)
+    const reader = response.body?.getReader()
+    if (!reader) throw new Error('No reader available')
+    
+    const accumulatedResponse = await processStreamResponse(reader)
+
+    if (accumulatedResponse) {
+      setMessages(prev => {
+        if (currentMessageId !== null) {
+          return prev.map((msg, i) => {
+            if (i === currentMessageId) {
+              return {
+                role: 'assistant',
+                content: {
+                  text: accumulatedResponse,
+                  links: (typeof msg.content === 'object' ? msg.content.links : undefined)
+                }
+              }
+            }
+            return msg
+          })
+        } else {
+          return [...prev, {
+            role: 'assistant',
+            content: { text: accumulatedResponse }
+          }]
+        }
+      })
+    }
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Failed to send message')
+  } finally {
+    setIsLoading(false)
+    setPartialResponse('')
+  }
+}, [messages, systemPrompt, parameters])
+
+
+const regenerateResponse = useCallback(async (messageIndex: number) => {
+  try {
+    setIsLoading(true)
+    setError(null)
+    setPartialResponse('')
+    
+    const previousMessages = messages.slice(0, messageIndex)
+    const lastUserMessage = previousMessages
+      .slice()
+      .reverse()
+      .find(msg => msg.role === 'user')
+      
+    if (!lastUserMessage) {
+      throw new Error('No user message found to regenerate response')
+    }
+    
+    const userContent = typeof lastUserMessage.content === 'string' 
+      ? lastUserMessage.content 
+      : lastUserMessage.content.text
+    
+    setMessages(messages.slice(0, messageIndex))
+
+    let isImageChat = false
+    let imageData = ''
+    let imagePrompt = ''
+
+    try {
+      const parsed = JSON.parse(userContent)
+      if (parsed.type === 'image') {
+        isImageChat = true
+        imageData = parsed.image
+        imagePrompt = parsed.prompt
+      }
+    } catch {
+      isImageChat = userContent.includes('data:image')
+      if (isImageChat) {
+        imageData = userContent
+        imagePrompt = "What's in this image?"
+      }
+    }
+    
+    if (isImageChat) {
+      const imageResponse = await processImageChat(imageData, imagePrompt)
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: { text: imageResponse }
+      }])
+      return
+    }
+
+    const conversationContext = getConversationContext(previousMessages)
+    const functionResult = await functionCalling(conversationContext)
+    
+    if (functionResult?.type === 'image_url') {
+      const imgResult = functionResult as any
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: {
+          text: '',
+          images: imgResult.images
+        }
+      }])
+      return
+    }
+
+    const { links } = processLinks(functionResult)
+    let currentMessageId: number | null = null
+    
+    if (links.length > 0) {
+      setMessages(prev => {
+        const newMessages = [...prev, {
+          role: 'assistant' as Role,
+          content: { text: '', links }
+        }]
+        currentMessageId = newMessages.length - 1
+        return newMessages
+      })
+    }
+
+    const enhancedPrompt = await createEnhancedPrompt(userContent, functionResult)
+    const chatMessages = createChatMessages(enhancedPrompt, systemPrompt, previousMessages.slice(0, -1))
+    
+    const response = await sendChatRequest(chatMessages)
+    const reader = response.body?.getReader()
+    if (!reader) throw new Error('No reader available')
+    
+    const accumulatedResponse = await processStreamResponse(reader)
+
+    if (accumulatedResponse) {
+      setMessages(prev => {
+        if (currentMessageId !== null) {
+          return prev.map((msg, i) => {
+            if (i === currentMessageId) {
+              return {
+                role: 'assistant',
+                content: {
+                  text: accumulatedResponse,
+                  links: (typeof msg.content === 'object' ? msg.content.links : undefined)
+                }
+              }
+            }
+            return msg
+          })
+        } else {
+          return [...prev, {
+            role: 'assistant',
+            content: { text: accumulatedResponse }
+          }]
+        }
+      })
+    }
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Failed to send message')
+  } finally {
+    setIsLoading(false)
+    setPartialResponse('')
+  }
+}, [messages, systemPrompt, parameters])
 
 
   async function sendChatRequest(chatMessages: ChatRequestMessage[]) {
