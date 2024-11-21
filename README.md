@@ -1,11 +1,13 @@
 # Groc.lol - xAI's Grok clone
 
-This is an open source clone of xAI's Grok.
+This is an open source clone of xAI's Grok, but way more chill.
 Made this just for fun. Don't sue me xAI. I love You.
 
 **Important:** Groc is 100% unaffiliated with xAI.
 
-Clone the repo and customize your llm model for better results cause the models used in this project are not the best. (I mean, it's free and open source, and I'm broke uni student)
+Your favorite "legally distinct" AI chatbot made by a broke student.
+
+**Note:** Free & open-source. Swap the models if you want something smarter!
 
 Live Demo: [groc.lol](https://www.groc.lol)
 

@@ -89,7 +89,7 @@ Be concise while maintaining accuracy - prioritize brevity over elaboration.
   },
   parameters: {
     temperature: 0.7,     // Higher values lead to more creative responses
-    max_tokens: 10000,     // Maximum length of response
+    max_tokens: 15000,     // Maximum length of response
     top_p: 1,          // Balance between diversity and quality
     frequency_penalty: 0, // Prevent word repetition (positive values reduce repetition)
     presence_penalty: 0,  // Introduce new topics (positive values favor new topics)
