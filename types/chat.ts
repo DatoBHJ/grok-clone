@@ -48,13 +48,13 @@ export interface ChatConfig {
 // Type definition for chat parameters
 export interface ChatParameters {
   temperature: number      // Randomness of responses (0-1)
-  max_tokens: number      // Maximum number of tokens
-  top_p: number          // Cumulative probability threshold (0-1)
-  frequency_penalty: number // Repetition penalty (-2.0-2.0)
-  presence_penalty: number  // New topic preference (-2.0-2.0)
+  max_tokens?: number      // Maximum number of tokens
+  top_p?: number          // Cumulative probability threshold (0-1)
+  frequency_penalty?: number // Repetition penalty (-2.0-2.0)
+  presence_penalty?: number  // New topic preference (-2.0-2.0)
   stream: boolean         // Whether to stream responses
-  stop: string[]         // Response stop tokens
-  n: number             // Number of responses to generate
+  stop?: string[]         // Response stop tokens
+  n?: number             // Number of responses to generate
   user?: string         // User identifier
 }
 
@@ -78,10 +78,13 @@ When analyzing stuff:
 - Groups related info by topics
 - Points out when sources disagree
 
-Citations:
-- Use format [number](url) (time)
-  ex. [1](https://example.com) (2 hours ago)
-- Only cite sources when provided.
+Citation rules:
+- ALWAYS use this EXACT format: [number](url)(time)
+- Example: [1](https://example.com)(2 hours ago)
+- Links must be complete and properly formatted.
+- INCORRECT: [3https://...]  [3https://...) 
+- CORRECT: [3](https://example.com)(5 minutes ago)
+
 
 Be concise while maintaining accuracy - prioritize brevity over elaboration.
     `,
@@ -92,7 +95,7 @@ Be concise while maintaining accuracy - prioritize brevity over elaboration.
   },
   parameters: {
     temperature: 0.8,     // Higher values lead to more creative responses
-    max_tokens: 15000,     // Maximum length of response
+    // max_tokens: 15000,     // Maximum length of response
     top_p: 1,          // Balance between diversity and quality
     frequency_penalty: 0, // Prevent word repetition (positive values reduce repetition)
     presence_penalty: 0,  // Introduce new topics (positive values favor new topics)

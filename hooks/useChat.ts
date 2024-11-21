@@ -103,12 +103,12 @@ export function useChat(options: UseChatOptions = {}) {
         case 'stock_info':
           enhancedPrompt += `\n\nStock Information:\nTicker: ${functionResult.data}\n\nRecent tweets about this stock:\n${functionResult.tweets
             .slice(0, config.numberOfTweetToScan)
-            .map((tweet: any) => `- [${twitterLinkCount++}] ${tweet.title}\n  ${tweet.snippet} (${tweet.date}) (${tweet.link})`)
+            .map((tweet: any) => `- [${twitterLinkCount++}] ${tweet.title}\n  ${tweet.snippet} (${tweet.date || ''}) (${tweet.link})`)
             .join('\n')}`
           
           enhancedPrompt += `\n\nRecent news about this stock:\n${functionResult.news
             .slice(0, config.numberOfPagesToScan)
-            .map((item: any) => `- [${otherLinkCount++}] ${item.title}: ${item.snippet} (${item.date}) (${item.link})`)
+            .map((item: any) => `- [${otherLinkCount++}] ${item.title}: ${item.snippet} (${item.date || ''}) (${item.link})`)
             .join('\n')}`
           
           twitterLinks = functionResult.tweets.slice(0, config.numberOfTweetToScan).map((tweet: any, index: number) => ({
@@ -116,7 +116,8 @@ export function useChat(options: UseChatOptions = {}) {
             url: tweet.link,
             title: tweet.title,
             description: tweet.snippet,
-            date: tweet.date,
+            date: tweet.date || '',
+            imageUrl: tweet.imageUrl || '',
             domain: 'twitter.com'
           }));
 
@@ -125,7 +126,8 @@ export function useChat(options: UseChatOptions = {}) {
             url: item.link,
             title: item.title,
             description: item.snippet,
-            date: item.date,
+            date: item.date || '',
+            imageUrl: item.imageUrl || '',
             domain: new URL(item.link).hostname
           }));
           break;
@@ -133,12 +135,12 @@ export function useChat(options: UseChatOptions = {}) {
         case 'news_and_tweets':
           enhancedPrompt += `\n\nRecent tweets:\n${functionResult.tweets
             .slice(0, config.numberOfTweetToScan)
-            .map((tweet: any) => `- [${twitterLinkCount++}] ${tweet.title}\n  ${tweet.snippet} (${tweet.date}) (${tweet.link})`)
+            .map((tweet: any) => `- [${twitterLinkCount++}] ${tweet.title}\n  ${tweet.snippet} (${tweet.date || ''}) (${tweet.link})`)
             .join('\n')}`
           
           enhancedPrompt += `\n\nRecent news context:\n${functionResult.news
             .slice(0, config.numberOfPagesToScan)
-            .map((item: any) => `- [${otherLinkCount++}] ${item.title}: ${item.snippet} (${item.date}) (${item.link})`)
+            .map((item: any) => `- [${otherLinkCount++}] ${item.title}: ${item.snippet} (${item.date || ''}) (${item.link})`)
             .join('\n')}`
           
           twitterLinks = functionResult.tweets.slice(0, config.numberOfTweetToScan).map((tweet: any, index: number) => ({
@@ -146,7 +148,8 @@ export function useChat(options: UseChatOptions = {}) {
             url: tweet.link,
             title: tweet.title,
             description: tweet.snippet,
-            date: tweet.date,
+            date: tweet.date || '',
+            imageUrl: tweet.imageUrl || '',
             domain: 'twitter.com'
           }));
 
@@ -155,7 +158,8 @@ export function useChat(options: UseChatOptions = {}) {
             url: item.link,
             title: item.title,
             description: item.snippet,
-            date: item.date,
+            date: item.date || '',
+            imageUrl: item.imageUrl || '',
             domain: new URL(item.link).hostname
           }));
           break;

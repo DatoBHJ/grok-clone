@@ -1,6 +1,6 @@
 // Chat.tsx
 import React, { useCallback, useState } from 'react';
-import { Message, MessageContent } from '@/types/chat';
+import { Message } from '@/types/chat';
 import { ChatInput } from './ChatInput';
 import { ChatMessage } from './ChatMessage';
 import { Pencil, X } from 'lucide-react';
@@ -29,10 +29,6 @@ export function Chat({
 }: ChatProps) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingContent, setEditingContent] = useState('');
-
-  const displayMessages = messages.filter(
-    (message) => message.role === 'assistant' || message.role === 'user'
-  );
 
   const isImageString = (str: string) => {
     try {
@@ -83,29 +79,13 @@ export function Chat({
     
     return typeof content === 'string' ? content : content.text;
   };
-
-
-  const getValidUrl = (href: string): string | null => {
-    try {
-      if (href.startsWith('/')) {
-        return window.location.origin + href;
-      }
-      if (!href.startsWith('http://') && !href.startsWith('https://')) {
-        href = 'https://' + href;
-      }
-      const url = new URL(href);
-      return url.hostname;
-    } catch {
-      return null;
-    }
-  };
   
   return (
     <>
           {rateLimitError && <RateLimit />}
 
       <div className="pb-32">
-        {displayMessages.map((message, index) => (
+        {messages.map((message, index) => (
           <ChatMessage
             key={index}
             messageIndex={index}

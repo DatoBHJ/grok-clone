@@ -212,9 +212,8 @@ async function webSearch(query: string, time: string) {
     });
 
     // Search for tweets
-    const tweetQuery = `${query} inurl:status twitter.com OR x.com`;
-    
-    const tweetsResponse = await fetch('https://google.serper.dev/search', {
+    const tweetQuery = `${query} (site:twitter.com OR site:x.com) inurl:status`;    
+    const tweetsResponse = await fetch('https://google.serper.dev/news', {
       method: 'POST',
       headers: {
         'X-API-KEY': process.env.SERPER_API_KEY!,
@@ -223,7 +222,6 @@ async function webSearch(query: string, time: string) {
       body: JSON.stringify({ 
         q: tweetQuery,
         num: 10,
-        type: 'search',
         tbs: tbs,
       })
     });
@@ -242,13 +240,16 @@ async function webSearch(query: string, time: string) {
         link: article.link,
         snippet: article.snippet,
         date: article.date,
-        source: article.source
+        source: article.source,
+        imageUrl: article.imageUrl
       })),
-      tweets: tweetsData.organic.map((result: any) => ({
+      tweets: tweetsData.news.map((result: any) => ({
         title: result.title,
         link: result.link,
         snippet: result.snippet,
-        date: result.date
+        date: result.date,
+        source: result.source,
+        imageUrl: result.imageUrl
       }))
     };
   } catch (error) {
@@ -343,9 +344,8 @@ async function getStockInfo(ticker: string, time: string) {
     });
 
     // Search for tweets
-    const tweetQuery = `${company} stock market OR earnings OR investor inurl:status twitter.com OR x.com`;
-    
-    const tweetsResponse = await fetch('https://google.serper.dev/search', {
+    const tweetQuery = `${company} (stock market OR earnings OR investor) (site:twitter.com OR site:x.com) inurl:status`;    
+    const tweetsResponse = await fetch('https://google.serper.dev/news', {
       method: 'POST',
       headers: {
         'X-API-KEY': process.env.SERPER_API_KEY!,
@@ -354,7 +354,6 @@ async function getStockInfo(ticker: string, time: string) {
       body: JSON.stringify({ 
         q: tweetQuery,
         num: 10,
-        type: 'search',
         tbs: tbs,
       })
     });
@@ -374,13 +373,16 @@ async function getStockInfo(ticker: string, time: string) {
         link: article.link,
         snippet: article.snippet,
         date: article.date,
-        source: article.source
+        source: article.source,
+        imageUrl: article.imageUrl
       })),
-      tweets: tweetsData.organic.map((result: any) => ({
+      tweets: tweetsData.news.map((result: any) => ({
         title: result.title,
         link: result.link,
         snippet: result.snippet,
-        date: result.date
+        date: result.date,
+        source: result.source,
+        imageUrl: result.imageUrl
       }))
     };
   } catch (error) {
