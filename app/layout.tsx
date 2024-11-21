@@ -1,7 +1,7 @@
 import './globals.css'
 import { ThemeProvider } from 'next-themes'
 import { IconGitHub } from '@/components/ui/icons'
-
+import { Analytics } from "@vercel/analytics/react"
 export const metadata = {
   title: 'Groc',
   description: 'This is a clone of the xAI Grok chat interface',
@@ -56,6 +56,7 @@ export default function RootLayout({
             <Footer />
           </div>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   )
