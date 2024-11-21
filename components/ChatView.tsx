@@ -52,6 +52,27 @@ const isTwitterLink = (url: string | undefined): boolean => {
   return url.includes('twitter.com') || url.includes('x.com');
 };
 
+const isValidUrl = (urlString: string): boolean => {
+  try {
+    new URL(urlString);
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
+// favicon URL을 안전하게 생성하는 함수
+const getFaviconUrl = (href: string | undefined): string | null => {
+  if (!href) return null;
+  
+  try {
+    const url = new URL(href);
+    return `https://www.google.com/s2/favicons?domain=${url.hostname}`;
+  } catch {
+    return null;
+  }
+};
+
 const ImageGrid: React.FC<{ images: Array<{ url: string }> }> = ({ images }) => {
   const handleImageClick = (imageUrl: string) => {
     const newWindow = window.open();
@@ -124,44 +145,12 @@ const ChatView: React.FC<ChatViewProps> = ({ content }) => {
         {children}
       </h3>
     ),
-    // a: ({ href, children }) => {
-    //   // Check if this is a citation link (matches [[number]](link) pattern)
-    //   const isCitation = typeof children === 'string' && /^\[\d+\]$/.test(children);
-      
-    //   if (isCitation) {
-    //     return (
-    //       <a 
-    //         href={href} 
-    //         target="_blank" 
-    //         rel="noopener noreferrer"
-    //         className={PROSE_STYLES.links.citation}
-    //       >
-    //         {children}
-    //       </a>
-    //     );
-    //   }
-      
-    //   // Determine link style based on URL
-    //   const linkClassName = isTwitterLink(href) 
-    //     ? PROSE_STYLES.links.twitter 
-    //     : PROSE_STYLES.links.regular;
-      
-    //   return (
-    //     <a 
-    //       href={href} 
-    //       target="_blank" 
-    //       rel="noopener noreferrer"
-    //       className={linkClassName}
-    //     >
-    //       {children}
-    //       {isTwitterLink(href) && ' 𝕏'} 
-    //     </a>
-    //   );
-    // },
     a: ({ href, children }) => {
       const linkClassName = isTwitterLink(href) 
         ? PROSE_STYLES.links.twitter 
         : PROSE_STYLES.links.regular;
+      
+      const faviconUrl = getFaviconUrl(href);
       
       return (
         <span className="inline-flex items-center gap-1">
@@ -173,12 +162,17 @@ const ChatView: React.FC<ChatViewProps> = ({ content }) => {
           >
             {children}
           </a>
-          {href && (
+          {faviconUrl && (
             <img 
-              src={`https://www.google.com/s2/favicons?domain=${new URL(href).hostname}`}
+              src={faviconUrl}
               alt=""
-              className="w-4 h-4 rounded-full"  
-              />
+              className="w-4 h-4 rounded-full"
+              onError={(e) => {
+                // 이미지 로드 실패 시 이미지 요소 제거
+                const target = e.target as HTMLElement;
+                target.style.display = 'none';
+              }}
+            />
           )}
         </span>
       );
