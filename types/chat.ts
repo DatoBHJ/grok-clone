@@ -147,7 +147,7 @@ Main goal: Provide accurate, helpful info with a fun, casual vibe. Please be con
   },
   parameters: {
     temperature: 0.7,
-    max_tokens: 15000,
+    // max_tokens: 15000,
     top_p: 1,
     frequency_penalty: 0,
     presence_penalty: 0,
