@@ -6,7 +6,6 @@ import { fal } from "@fal-ai/client";
 import { fetchTranscriptWithBackup, getYouTubeVideoId } from '@/lib/youtube-transcript';
 
 
-
 const functions: ChatCompletionTool[] = [
   {
     type: "function",
