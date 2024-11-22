@@ -6,12 +6,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Chat } from '@/components/Chat';
 import { useChat } from '@/hooks/useChat';
 import { IconGamepad, IconNewspaper, IconStock, IconYoutube } from '../components/ui/icons';
+import { Switch } from '@/components/ui/switch';
+import { streetModePrompt, originalPrompt } from '@/types/chat';
 
 import {
   Tooltip,
   TooltipProvider,
   TooltipTrigger,
 } from '../components/ui/tooltip';
+import ModeSelector from '@/components/ModeSelector';
 
 const convertImageToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -101,36 +104,11 @@ const NewsCard = ({ title, meta }: { title: string; meta: string }) => (
   </TooltipProvider>
 );
 
-const Header = ({ onBack }: { onBack: () => void }) => (
-  <header className="sticky top-0 z-50 bg-background/70">
-    <div className="w-full mx-auto">
-      <div className="p-4 flex items-center gap-4">
-        <button 
-          className="p-2 hover:bg-card rounded-lg transition-colors"
-          onClick={onBack}
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        
-        <div className="flex-1 flex justify-center items-center gap-3">
-          <div className="flex items-center gap-2">
-            <h1 className="text-base font-semibold text-black dark:text-white">Groc 2</h1>
-          </div>
-          <span className="px-2 py-0.5 text-xs bg-sky-100 text-sky-500  dark:bg-blue-800/50 dark:text-blue-500 rounded-md font-bold">beta</span>
-        </div>
-        
-        <button className="p-2 hover:bg-card rounded-lg transition-colors">
-          <Share className="w-5 h-5" />
-        </button>
-      </div>
-    </div>
-  </header>
-);
-
 export default function Home() {
   const [showChat, setShowChat] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isStreetMode, setIsStreetMode] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { 
@@ -143,8 +121,48 @@ export default function Home() {
     regenerateResponse,
     resetChat,
     rateLimitError 
-  } = useChat();
+  } = useChat({
+    systemPrompt: isStreetMode ? streetModePrompt : originalPrompt
+  });
 
+
+  const Header = ({ 
+    onBack, 
+    showBackButton = true,
+    isStreetMode,
+    setIsStreetMode 
+  }: { 
+    onBack?: () => void;
+    showBackButton?: boolean;
+    isStreetMode: boolean;
+    setIsStreetMode: (value: boolean) => void;
+  }) => {
+    return (
+      <header className="sticky top-0 z-50 bg-background/70 backdrop-blur-md">
+        <div className="w-full mx-auto">
+          <div className="p-4 flex items-center">
+            {showBackButton && (
+              <button 
+                className="p-2 hover:bg-card rounded-lg transition-colors"
+                onClick={onBack}
+                aria-label="Go back"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+            )}
+            
+            <div className="flex-1 flex justify-center">
+              <ModeSelector 
+                isStreetMode={isStreetMode}
+                setIsStreetMode={setIsStreetMode}
+              />
+            </div>
+          </div>
+        </div>
+      </header>
+    );
+  };
+  
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -204,7 +222,12 @@ export default function Home() {
   if (showChat) {
     return (
       <div className="flex flex-col h-screen overflow-hidden bg-background">
-        <Header onBack={handleBack} />
+        <Header 
+          onBack={handleBack} 
+          showBackButton={true}
+          isStreetMode={isStreetMode}
+          setIsStreetMode={setIsStreetMode}
+        />
         <div className="flex-1 overflow-y-auto">
           <Chat 
             messages={messages}
@@ -223,6 +246,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+          <Header 
+        showBackButton={false}
+        isStreetMode={isStreetMode}
+        setIsStreetMode={setIsStreetMode}
+      />
       <main className="max-w-3xl mx-auto p-4">
         <div className="mb-16 mt-8">
           <h1 className="text-4xl font-medium text-center mb-8 text-black dark:text-white">Groc lol</h1>
@@ -324,7 +352,7 @@ export default function Home() {
           Images are generated with FLUX.1 by Black Forest Labs
         </p>
 
-        <div className="grid grid-cols-2 gap-4">
+        {/* <div className="grid grid-cols-2 gap-4">
           <NewsCard 
             title="M4 Mac Mini: Power and Price Debate"
             meta="Trending now · Technology · 821 posts"
@@ -333,7 +361,7 @@ export default function Home() {
             title="Sam Altman's AGI Prediction for 2025"
             meta="16 hours ago · Technology · 6K posts"
           />
-        </div>
+        </div> */}
       </main>
     </div>
   );

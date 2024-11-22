@@ -18,6 +18,19 @@ export default {
         "popover-foreground": "rgb(var(--popover-foreground))",
         input: "rgb(var(--input))",
       },
+      keyframes: {
+        "slide-in-from-top-2": {
+          "0%": { transform: "translateY(-2%)" },
+          "100%": { transform: "translateY(0)" },
+        },
+        "slide-in-from-bottom-2": {
+          "0%": { transform: "translateY(2%)" },
+          "100%": { transform: "translateY(0)" },
+        },
+      },
+      animation: {
+        "in": "slide-in-from-top-2 0.2s ease-out",
+      },
     },
   },
   plugins: [],
