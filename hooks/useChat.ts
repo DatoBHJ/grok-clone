@@ -297,7 +297,6 @@ export function useChat(options: UseChatOptions = {}) {
         throw new Error(`Rate limit check failed: ${rateLimitResponse.statusText}`)
       }
 
-       // Image chat handling
     let isImageChat = false
     let imageData = ''
     let imagePrompt = ''
@@ -319,7 +318,6 @@ export function useChat(options: UseChatOptions = {}) {
     
     if (isImageChat) {
       const imageResponse = await processImageChat(imageData, imagePrompt)
-      // 새로운 assistant 메시지를 항상 추가
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: {
@@ -335,7 +333,6 @@ export function useChat(options: UseChatOptions = {}) {
     
     if (functionResult?.type === 'image_url') {
       const imgResult = functionResult as any
-      // 새로운 assistant 메시지를 항상 추가
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: {
@@ -378,7 +375,6 @@ export function useChat(options: UseChatOptions = {}) {
 
     if (accumulatedResponse) {
       setMessages(prev => {
-        // 현재 메시지가 links로 시작된 경우
         if (currentMessageId !== null) {
           return prev.map((msg, index) => {
             if (index === currentMessageId) {
@@ -393,7 +389,6 @@ export function useChat(options: UseChatOptions = {}) {
             return msg
           })
         } 
-        // links 없이 새로운 메시지 시작한 경우
         else {
           return [...prev, {
             role: 'assistant',

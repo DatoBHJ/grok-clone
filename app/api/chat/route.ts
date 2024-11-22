@@ -1,6 +1,7 @@
 // app/api/chat/route.ts
 import { createRequestBody, defaultConfig } from '@/types/chat'
 import { NextResponse } from 'next/server'
+export const runtime = 'edge' 
 
 // Helper function to clean enhanced prompts from message history
 function cleanEnhancedPrompt(content: string): string {
