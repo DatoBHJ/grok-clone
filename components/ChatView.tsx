@@ -168,7 +168,6 @@ const ChatView: React.FC<ChatViewProps> = ({ content }) => {
               alt=""
               className="w-4 h-4 rounded-full"
               onError={(e) => {
-                // 이미지 로드 실패 시 이미지 요소 제거
                 const target = e.target as HTMLElement;
                 target.style.display = 'none';
               }}
