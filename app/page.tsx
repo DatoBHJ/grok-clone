@@ -1,19 +1,13 @@
 'use client'
 
 import React, { useState, useRef } from 'react';
-import { Share, SendHorizontal, Image, ArrowLeft, X } from 'lucide-react';
+import { SendHorizontal, Image, ArrowLeft, X } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Chat } from '@/components/Chat';
 import { useChat } from '@/hooks/useChat';
 import { IconGamepad, IconNewspaper, IconStock, IconYoutube } from '../components/ui/icons';
-import { Switch } from '@/components/ui/switch';
 import { streetModePrompt, originalPrompt } from '@/types/chat';
 
-import {
-  Tooltip,
-  TooltipProvider,
-  TooltipTrigger,
-} from '../components/ui/tooltip';
 import ModeSelector from '@/components/ModeSelector';
 
 const convertImageToBase64 = (file: File): Promise<string> => {
@@ -77,32 +71,40 @@ const ImageCard = ({
   </div>
 );
 
-const NewsCard = ({ title, meta }: { title: string; meta: string }) => (
-  <TooltipProvider>
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Card className="relative bg-card hover:bg-card/80 transition-colors cursor-pointer border-0 group">
-          <CardContent className="p-6">
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <h3 className="text-card-foreground text-base mb-2">{title}</h3>
-                <p className="text-card-foreground/60 text-sm">{meta}</p>
-              </div>
-              <span className="inline-flex items-center rounded-md bg-blue-400/10 px-2 py-1 text-xs font-medium text-blue-400 ring-1 ring-inset ring-blue-400/30">
-                Soon
-              </span>
-            </div>
-            <div className="absolute inset-0 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <p className="text-sm text-muted-foreground font-medium">
-                News feature is coming soon!
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </TooltipTrigger>
-    </Tooltip>
-  </TooltipProvider>
-);
+
+// import {
+//   Tooltip,
+//   TooltipProvider,
+//   TooltipTrigger,
+// } from '../components/ui/tooltip';
+
+// card for trending posts on x.com
+// const NewsCard = ({ title, meta }: { title: string; meta: string }) => (
+//   <TooltipProvider>
+//     <Tooltip>
+//       <TooltipTrigger asChild>
+//         <Card className="relative bg-card hover:bg-card/80 transition-colors cursor-pointer border-0 group">
+//           <CardContent className="p-6">
+//             <div className="flex justify-between items-start">
+//               <div className="flex-1">
+//                 <h3 className="text-card-foreground text-base mb-2">{title}</h3>
+//                 <p className="text-card-foreground/60 text-sm">{meta}</p>
+//               </div>
+//               <span className="inline-flex items-center rounded-md bg-blue-400/10 px-2 py-1 text-xs font-medium text-blue-400 ring-1 ring-inset ring-blue-400/30">
+//                 Soon
+//               </span>
+//             </div>
+//             <div className="absolute inset-0 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+//               <p className="text-sm text-muted-foreground font-medium">
+//                 News feature is coming soon!
+//               </p>
+//             </div>
+//           </CardContent>
+//         </Card>
+//       </TooltipTrigger>
+//     </Tooltip>
+//   </TooltipProvider>
+// );
 
 export default function Home() {
   const [showChat, setShowChat] = useState(false);
@@ -219,16 +221,17 @@ export default function Home() {
     await addMessage(title);
   };
 
-  if (showChat) {
-    return (
-      <div className="flex flex-col h-screen overflow-hidden bg-background">
-        <Header 
-          onBack={handleBack} 
-          showBackButton={true}
-          isStreetMode={isStreetMode}
-          setIsStreetMode={setIsStreetMode}
-        />
-        <div className="flex-1 overflow-y-auto">
+if (showChat) {
+  return (
+    <div className="flex flex-col h-[100dvh]"> 
+      <Header 
+        onBack={handleBack} 
+        showBackButton={true}
+        isStreetMode={isStreetMode}
+        setIsStreetMode={setIsStreetMode}
+      />
+      <main className="flex-1 overflow-y-auto">
+        <div className="max-w-3xl mx-auto">
           <Chat 
             messages={messages}
             isLoading={isLoading}
@@ -240,9 +243,10 @@ export default function Home() {
             rateLimitError={rateLimitError}
           />
         </div>
-      </div>
-    );
-  }
+      </main>
+    </div>
+  );
+}
 
   return (
     <div className="min-h-screen bg-background text-foreground">

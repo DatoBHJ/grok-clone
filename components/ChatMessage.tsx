@@ -126,7 +126,7 @@ export function ChatMessage({
             </>
           )}
           
-          <div className="flex gap-3 mt-4">
+          <div className="flex gap-3 mb-4">
             {hasText && (
               <button 
                 className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors group"

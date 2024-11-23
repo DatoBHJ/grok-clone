@@ -81,10 +81,11 @@ export function Chat({
   };
   
   return (
-    <>
-          {rateLimitError && <RateLimit />}
-
-      <div className="pb-32">
+    <div className="relative h-full">
+      {rateLimitError && <RateLimit />}
+      
+      {/* 메시지 영역: 하단 여백을 margin으로 변경 */}
+      <div className="mb-32"> 
         {messages.map((message, index) => (
           <ChatMessage
             key={index}
@@ -176,6 +177,6 @@ export function Chat({
           />
         </div>
       </div>
-    </>
+    </div>
   );
 }
