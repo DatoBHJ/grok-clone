@@ -198,21 +198,25 @@ export function useChat(options: UseChatOptions = {}) {
             .join('\n')}`
           break
   
-        case 'youtube_transcript':
-          try {
-            const videoInfo = await fetchVideoInfo(new URL(functionResult.url).searchParams.get('v') || '')
-            enhancedPrompt += `\n\nYouTube Video Information:\nTitle: ${videoInfo.title}\nAuthor: ${videoInfo.author}\n`
-          } catch (error) {
-            console.warn('Failed to fetch video info for transcript:', error)
-          }
-          
-          enhancedPrompt += `\n\nYouTube Video Transcript:\n${functionResult.transcript}\n\nVideo URL: [Link ${otherLinkCount++}] ${functionResult.url}`
-          break
+          case 'youtube_transcript':
+            try {
+              const videoInfo = await fetchVideoInfo(new URL(functionResult.url).searchParams.get('v') || '')
+              enhancedPrompt += `\n\nYouTube Video Information:\nTitle: ${videoInfo.title}\nAuthor: ${videoInfo.author}\n`
+            } catch (error) {
+              console.warn('Failed to fetch video info for transcript:', error)
+            }
+            
+            if (functionResult.error === 'VIDEO_TOO_LONG') {
+              enhancedPrompt += `\n\nError: ${functionResult.transcript}`
+            } else {
+              enhancedPrompt += `\n\nYouTube Video Transcript:\n${functionResult.transcript}\n\nVideo URL: [Link ${otherLinkCount++}] ${functionResult.url}`
+            }
+            break
+        }
       }
+    
+      return enhancedPrompt
     }
-  
-    return enhancedPrompt
-  }
 
   const processImageChat = async (image: string, prompt: string = "What's in this image?") => {
     try {

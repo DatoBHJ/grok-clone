@@ -3,17 +3,17 @@ import { ChevronDown } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 
 const ModeSelector = ({ 
-  isStreetMode, 
-  setIsStreetMode 
+  isSavageMode, 
+  setisSavageMode 
 }: { 
-  isStreetMode: boolean;
-  setIsStreetMode: (value: boolean) => void;
+  isSavageMode: boolean;
+  setisSavageMode: (value: boolean) => void;
 }) => {
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
         <button className="flex items-center gap-2 px-4 py-2 text-sm text-black dark:text-white font-semibold outline-none ">
-          Groc 2 {isStreetMode ? 'Street' : ''} 
+          Groc 2 {isSavageMode ? 'Savage' : ''} 
           <span className="px-2 py-0.5 text-xs bg-sky-100 dark:bg-blue-950/70 text-sky-500 dark:text-blue-500 rounded-md font-bold">
             beta
           </span>
@@ -30,15 +30,15 @@ const ModeSelector = ({
             className="relative flex items-center justify-between px-4 py-3 cursor-pointer outline-none"
             onSelect={(event) => {
               event.preventDefault();
-              setIsStreetMode(!isStreetMode);
+              setisSavageMode(!isSavageMode);
             }}
           >
-            <span className="font-medium text-black dark:text-white">Street Mode</span>
+            <span className="font-medium text-black dark:text-white">savage Mode</span>
             <div className={`w-9 h-5 rounded-full transition-colors ${
-              isStreetMode ? 'bg-sky-500 dark:bg-blue-500' : 'bg-input'
+              isSavageMode ? 'bg-sky-500 dark:bg-blue-500' : 'bg-input'
             } relative`}>
               <div className={`absolute w-4 h-4 rounded-full bg-white transform transition-transform top-0.5 left-0.5 ${
-                isStreetMode ? 'translate-x-4' : 'translate-x-0'
+                isSavageMode ? 'translate-x-4' : 'translate-x-0'
               }`} />
             </div>
           </DropdownMenu.Item>

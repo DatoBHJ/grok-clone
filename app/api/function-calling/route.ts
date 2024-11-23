@@ -130,6 +130,10 @@ const functions: ChatCompletionTool[] = [
   },
 ];
 
+function estimateTokenCount(text: string): number {
+  return Math.ceil(text.length / 4);
+}
+
 async function getYouTubeTranscript(url: string, lang: string = 'en') {
   try {
     const videoId = getYouTubeVideoId(url);
@@ -138,10 +142,23 @@ async function getYouTubeTranscript(url: string, lang: string = 'en') {
     }
     
     const transcript = await fetchTranscriptWithBackup(videoId, lang);
+    const estimatedTokens = estimateTokenCount(transcript);
+    const MAX_TOKENS = 15000; 
+
+    if (estimatedTokens > MAX_TOKENS) {
+      return {
+        type: 'youtube_transcript' as const,
+        transcript: 'This video is too long to process. Please select a shorter video.',
+        videoId,
+        url,
+        error: 'VIDEO_TOO_LONG',
+        estimatedTokens
+      };
+    }
     
     return {
       type: 'youtube_transcript' as const,
-      transcript,
+      transcript: transcript,
       videoId,
       url
     };
@@ -150,6 +167,7 @@ async function getYouTubeTranscript(url: string, lang: string = 'en') {
     throw error;
   }
 }
+
 
 async function generateImage(prompt: string) {
   try {
@@ -499,12 +517,20 @@ export async function POST(req: Request) {
           break
         case 'getYouTubeTranscript':
           result = await functionToCall(args.url, args.lang)
+          if (result?.type === 'youtube_transcript' && result.error === 'VIDEO_TOO_LONG') {
+            return Response.json({
+              type: 'youtube_transcript',
+              transcript: result.transcript,
+              videoId: result.videoId,
+              url: result.url,
+              error: 'VIDEO_TOO_LONG'
+            });
+          }
           break
         default:
           return Response.json({ type: null, data: null }, { status: 200 })
       }
       
-
       return Response.json(result)
     } catch (error) {
       console.error(`Function execution error:`, error)
