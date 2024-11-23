@@ -11,9 +11,17 @@ export function ChatInput({ onSend, initialValue = '', isLoading }: ChatInputPro
   const [input, setInput] = useState(initialValue)
   const [isSending, setIsSending] = useState(false)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const textAreaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const previousInputValue = useRef(input)
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textAreaRef.current) {
+      textAreaRef.current.style.height = 'inherit';
+      textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight}px`;
+    }
+  }, [input]);
 
   const convertImageToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -77,28 +85,25 @@ export function ChatInput({ onSend, initialValue = '', isLoading }: ChatInputPro
     }
   }, [input, selectedImage, isLoading, isSending, onSend])
   
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSubmit()
     }
   }, [handleSubmit])
 
-
   useEffect(() => {
     if (initialValue !== previousInputValue.current) {
       setInput(initialValue)
-      if (initialValue && inputRef.current) {
-        inputRef.current.focus()
+      if (initialValue && textAreaRef.current) {
+        textAreaRef.current.focus()
         const length = initialValue.length
-        inputRef.current.setSelectionRange(length, length)
+        textAreaRef.current.setSelectionRange(length, length)
       }
       previousInputValue.current = initialValue
     }
   }, [initialValue])
 
-  
   return (
     <div className="max-w-3xl mx-auto">
       {selectedImage && (
@@ -119,40 +124,42 @@ export function ChatInput({ onSend, initialValue = '', isLoading }: ChatInputPro
         </div>
       )}
       
-      <div className="relative ">
-      <input
-        ref={inputRef}
-        type="text"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder={selectedImage ? "Ask about this image" : "Ask anything"}
-        disabled={isLoading || isSending}
-        className="w-full pl-14 pr-12 py-4 bg-gray-100 dark:bg-zinc-800 rounded-full 
-                  text-gray-900 dark:text-white placeholder-gray-500 
-                  dark:placeholder-zinc-400 focus:outline-none focus:ring-0
-                  disabled:opacity-60 disabled:cursor-not-allowed
-                  transition-all duration-200"
-      />
-      <input
-        type="file"
-        ref={fileInputRef}
-        className="hidden"
-        accept="image/*"
-        onChange={handleImageUpload}
-      />
-      <button 
-        onClick={handleImageClick}
-        className="absolute left-3 top-1/2 transform -translate-y-1/2 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-      >
-        <Image className="w-5 h-5 text-gray-400 dark:text-zinc-400" />
-      </button>
+      <div className="relative flex items-center">
+        <button 
+          onClick={handleImageClick}
+          className="absolute left-3 z-10 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+        >
+          <Image className="w-5 h-5 text-gray-400 dark:text-zinc-400" />
+        </button>
+
+        <textarea
+          ref={textAreaRef}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={selectedImage ? "Ask about this image" : "Ask anything"}
+          disabled={isLoading || isSending}
+          rows={1}
+          className="w-full pl-14 pr-12 py-4 bg-gray-100 dark:bg-zinc-800 rounded-full 
+                    text-gray-900 dark:text-white placeholder-gray-500 
+                    dark:placeholder-zinc-400 focus:outline-none focus:ring-0
+                    disabled:opacity-60 disabled:cursor-not-allowed
+                    transition-all duration-200 resize-none overflow-hidden
+                    min-h-[56px] max-h-[200px]"
+        />
+
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          accept="image/*"
+          onChange={handleImageUpload}
+        />
 
         <button
           onClick={() => handleSubmit()}
           disabled={isLoading || isSending || (!input.trim() && !selectedImage)}
-          className="absolute right-4 top-1/2 transform -translate-y-1/2
-                     disabled:opacity-40 disabled:cursor-not-allowed"
+          className="absolute right-4 z-10 transform disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <SendHorizontal 
             className={`w-5 h-5 ${
