@@ -21,6 +21,7 @@ export async function GET() {
       (await headers()).get('client-ip') || "";
 
     const { success, limit, reset, remaining } = await ratelimit.limit(identifier);
+    console.log('Rate limit check:', { success, limit, reset, remaining });
 
     if (!success) {
       return NextResponse.json(

@@ -479,7 +479,7 @@ export async function POST(req: Request) {
     });
     const toolCalls = response.choices[0]?.message?.tool_calls
 
-    console.log('OpenAI response tool calls:', JSON.stringify(toolCalls, null, 2,), '\n')
+    // console.log('OpenAI response tool calls:', JSON.stringify(toolCalls, null, 2,), '\n')
 
     if (!toolCalls || toolCalls.length === 0) {
       return Response.json({ type: null, data: null }, { status: 200 })
@@ -493,9 +493,9 @@ export async function POST(req: Request) {
       const args = JSON.parse(functionCall.function.arguments)
 
       // Debug logging
-      console.log('Parsed arguments:', args, '\n')
+      // console.log('Parsed arguments:', args, '\n')
       const timeRange = args.time
-      console.log('Using time range:', timeRange, '\n')
+      // console.log('Using time range:', timeRange, '\n')
 
       let result
 
