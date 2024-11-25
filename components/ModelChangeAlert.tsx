@@ -34,7 +34,7 @@ const ModelChangeAlert: React.FC<ModelChangeAlertProps> = ({
           <div className="flex items-center gap-3 flex-1">
             <AlertCircle className="h-4 w-4 shrink-0" />
             <AlertDescription className="text-sm py-0.5">
-              Due to technical issues with the Grok API, we are temporarily using the Llama model.
+              Due to technical issues with the Grok API, we are temporarily using the llama-3.2-90b-vision model.
             </AlertDescription>
           </div>
           {showCloseButton && (
