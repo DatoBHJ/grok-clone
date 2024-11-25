@@ -9,6 +9,7 @@ import { IconGamepad, IconNewspaper, IconStock, IconYoutube } from '../component
 import { savageModePrompt, originalPrompt } from '@/types/chat';
 
 import ModeSelector from '@/components/ModeSelector';
+import ModelChangeAlert from '@/components/ModelChangeAlert';
 
 const convertImageToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -272,6 +273,8 @@ return (
       isSavageMode={isSavageMode}
       setisSavageMode={setisSavageMode}
     />
+        <ModelChangeAlert />
+
     <main className="max-w-3xl mx-auto p-4">
       <div className="mb-16 mt-8">
         <h1 className="text-4xl font-medium text-center mb-8 text-black dark:text-white">Groc lol</h1>
