@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Chat } from '@/components/Chat';
 import { useChat } from '@/hooks/useChat';
 import { IconGamepad, IconNewspaper, IconStock, IconYoutube } from '../components/ui/icons';
-import { savageModePrompt, originalPrompt } from '@/types/chat';
+import { streetModePrompt, originalPrompt } from '@/types/chat';
 
 import ModeSelector from '@/components/ModeSelector';
 import ModelChangeAlert from '@/components/ModelChangeAlert';
@@ -116,7 +116,7 @@ export default function Home() {
   const [showChat, setShowChat] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [isSavageMode, setisSavageMode] = useState(true);
+  const [isstreetMode, setisstreetMode] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -131,7 +131,7 @@ export default function Home() {
     resetChat,
     rateLimitError 
   } = useChat({
-    systemPrompt: isSavageMode ? savageModePrompt : originalPrompt
+    systemPrompt: isstreetMode ? streetModePrompt : originalPrompt
   });
 
 
@@ -146,13 +146,13 @@ useEffect(() => {
   const Header = ({ 
     onBack, 
     showBackButton = true,
-    isSavageMode,
-    setisSavageMode 
+    isstreetMode,
+    setisstreetMode 
   }: { 
     onBack?: () => void;
     showBackButton?: boolean;
-    isSavageMode: boolean;
-    setisSavageMode: (value: boolean) => void;
+    isstreetMode: boolean;
+    setisstreetMode: (value: boolean) => void;
   }) => {
     return (
       <header className="sticky top-0 z-50 bg-background/70 backdrop-blur-md">
@@ -170,8 +170,8 @@ useEffect(() => {
             
             <div className="flex-1 flex justify-center">
               <ModeSelector 
-                isSavageMode={isSavageMode}
-                setisSavageMode={setisSavageMode}
+                isstreetMode={isstreetMode}
+                setisstreetMode={setisstreetMode}
               />
             </div>
           </div>
@@ -245,8 +245,8 @@ if (showChat) {
       <Header 
         onBack={handleBack} 
         showBackButton={true}
-        isSavageMode={isSavageMode}
-        setisSavageMode={setisSavageMode}
+        isstreetMode={isstreetMode}
+        setisstreetMode={setisstreetMode}
       />
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto">
@@ -270,8 +270,8 @@ return (
   <div className="min-h-screen bg-background text-foreground">
     <Header 
       showBackButton={false}
-      isSavageMode={isSavageMode}
-      setisSavageMode={setisSavageMode}
+      isstreetMode={isstreetMode}
+      setisstreetMode={setisstreetMode}
     />
         <ModelChangeAlert />
 

@@ -52,15 +52,6 @@ const isTwitterLink = (url: string | undefined): boolean => {
   return url.includes('twitter.com') || url.includes('x.com');
 };
 
-const isValidUrl = (urlString: string): boolean => {
-  try {
-    new URL(urlString);
-    return true;
-  } catch (e) {
-    return false;
-  }
-};
-
 // favicon URL을 안전하게 생성하는 함수
 const getFaviconUrl = (href: string | undefined): string | null => {
   if (!href) return null;
