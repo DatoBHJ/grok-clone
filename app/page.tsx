@@ -273,7 +273,7 @@ return (
       isstreetMode={isstreetMode}
       setisstreetMode={setisstreetMode}
     />
-        {/* <ModelChangeAlert /> */}
+        <ModelChangeAlert />
 
     <main className="max-w-3xl mx-auto p-4">
       <div className="mb-16 mt-8">
