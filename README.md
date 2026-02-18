@@ -3,15 +3,7 @@
 This is an open source clone of xAI's Grok.
 Made this just for fun. Don't sue me xAI. I love You.
 
-**Important:** Groc is 100% unaffiliated with xAI.
-
-Your favorite "legally distinct" AI chatbot made by a broke student.
-
-**Note:** Free & open-source. Swap the models if you want something smarter!
-
 Live Demo: [groc.lol](https://www.groc.lol)
-
-Mobile app: PWA supported, click on the "Add to Home Screen" button in your browser.
 
 ## Preview
 
@@ -78,14 +70,3 @@ yarn dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-## ☕ Support
-
-If you find this project helpful:
-- ⭐ Star this repo
-- ☕ [Buy me a coffee](https://buymeacoffee.com/KingBob)
-
-## 📞 Contact
-
-- 🐦 X: [@DatoBHJ](https://x.com/DatoBHJ)
-- 📧 Email: datobhj@gmail.com
