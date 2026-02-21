@@ -1,8 +1,6 @@
 # Groc.lol - xAI's Grok clone
 
-This is an open source clone of xAI's Grok.
-Made this just for fun. Don't sue me xAI. I love You.
-
+This is an open source clone of xAI's Grok
 Live Demo: [groc.lol](https://www.groc.lol)
 
 ## Preview
